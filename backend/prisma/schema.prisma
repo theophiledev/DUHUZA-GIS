@@ -1,0 +1,406 @@
+// ============================================================
+// Prisma schema — Multi-Vertical Property/Rental/GIS/Jobs Platform
+// Mirrors the ERD in SRS Section 7
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// PostGIS extension must be enabled manually via migration SQL:
+// CREATE EXTENSION IF NOT EXISTS postgis;
+// Prisma doesn't model GEOGRAPHY natively — see migration note in
+// migrations/002_add_postgis.sql for public_geog / private_geog columns.
+
+// ---------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+  CLIENT
+}
+
+enum ListingCategory {
+  HOUSE
+  LAND
+  VEHICLE
+  MOTORCYCLE
+}
+
+enum ListingType {
+  SALE
+  RENT
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+  SOLD
+  RENTED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum LanguageCode {
+  EN
+  RW
+  SW
+}
+
+enum GisRequestStatus {
+  REQUESTED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum JobStatus {
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  CLOSED
+}
+
+// Market items and Service profiles share this simpler status set —
+// they don't have property's sold/rented/withdrawn/expired states.
+enum ListingLiteStatus {
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  SOLD // market items only
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+}
+
+// What a MoMo payment is promoting (FR43)
+enum PaymentReferenceType {
+  LISTING
+  MARKET_ITEM
+  SERVICE
+  JOB
+}
+
+// ---------------------------------------------------------------
+// USERS & PERMISSIONS  (FR1-FR3b, BR11)
+// ---------------------------------------------------------------
+
+model User {
+  id                 String   @id @default(uuid())
+  name               String
+  email              String?  @unique
+  phone              String?  @unique
+  passwordHash       String
+  role               Role
+  preferredLanguage  LanguageCode @default(RW) // Kinyarwanda is the platform default (SRS 3.9)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // relations
+  listings           Listing[]              @relation("AgentListings")
+  statusChanges      ListingStatusHistory[]  @relation("StatusChangedBy")
+  permissions        UserPermission[]        @relation("AccountPermissions")
+  grantedPermissions UserPermission[]        @relation("GrantedByAdmin")
+  gisRequestsMade    GisRequest[]            @relation("ClientGisRequests")
+  gisRequestsAssigned GisRequest[]           @relation("AssignedSurveyor")
+  jobsPosted         Job[]                   @relation("Employer")
+  applications       JobApplication[]        @relation("Applicant")
+  marketItems        MarketItem[]            @relation("Seller")
+  serviceProvider    ServiceProvider?        @relation("ProviderProfile")
+  transactions       Transaction[]           @relation("PayingUser")
+
+  @@map("users")
+}
+
+// Per-account privilege overrides (FR3a) — role gives defaults,
+// rows here override for a specific account.
+model UserPermission {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation("AccountPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  permissionKey String   // e.g. can_approve_property, can_approve_gis, max_active_listings
+  value         String   // stored as string; parse to bool/int in app layer
+  grantedById   String
+  grantedBy     User     @relation("GrantedByAdmin", fields: [grantedById], references: [id])
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, permissionKey])
+  @@map("user_permissions")
+}
+
+// ---------------------------------------------------------------
+// LISTINGS  (FR4-FR22)
+// ---------------------------------------------------------------
+
+model Listing {
+  id            String          @id @default(uuid())
+  agentId       String
+  agent         User            @relation("AgentListings", fields: [agentId], references: [id])
+  category      ListingCategory
+  listingType   ListingType
+  price         Decimal?        @db.Decimal(14, 2)
+  currency      String          @default("RWF")
+  status        ListingStatus   @default(DRAFT)
+
+  // Public (approximate/jittered) location — safe to expose
+  publicLat     Float?
+  publicLng     Float?
+  district      String?
+  sector        String?
+  cell          String?
+  village       String?
+
+  // Private (exact) location + owner info — NEVER serialize publicly
+  privateLat    Float?
+  privateLng    Float?
+  ownerName     String?
+  ownerPhone    String?
+  internalNotes String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  translations      ListingTranslation[]
+  media              ListingMedia[]
+  attributes         ListingAttribute[]
+  statusHistory      ListingStatusHistory[]
+  fieldVisibility    ListingFieldVisibility[]
+  whatsappClicks     WhatsappClickLog[]
+
+  @@index([agentId])
+  @@index([status])
+  @@index([category, listingType])
+  @@map("listings")
+}
+
+// One row per language provided (FR29-FR32)
+model ListingTranslation {
+  id                  String       @id @default(uuid())
+  listingId           String
+  listing             Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  languageCode        LanguageCode
+  title               String
+  description         String       @db.Text
+  isMachineTranslated Boolean      @default(false)
+
+  @@unique([listingId, languageCode])
+  @@map("listing_translations")
+}
+
+// Category-specific attributes (bedrooms, engine_cc, land_size_sqm, ...)
+model ListingAttribute {
+  id        String  @id @default(uuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+
+  @@unique([listingId, key])
+  @@map("listing_attributes")
+}
+
+model ListingMedia {
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  type      String   @default("photo") // photo | video
+  isPublic  Boolean  @default(true)
+  sortOrder Int      @default(0)
+
+  @@map("listing_media")
+}
+
+model ListingStatusHistory {
+  id          String        @id @default(uuid())
+  listingId   String
+  listing     Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  changedById String
+  changedBy   User          @relation("StatusChangedBy", fields: [changedById], references: [id])
+  oldStatus   ListingStatus?
+  newStatus   ListingStatus
+  comment     String?
+  changedAt   DateTime      @default(now())
+
+  @@map("listing_status_history")
+}
+
+// Manager per-listing overrides of which fields are public (FR14)
+model ListingFieldVisibility {
+  id        String  @id @default(uuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  fieldName String
+  isPublic  Boolean
+
+  @@unique([listingId, fieldName])
+  @@map("listing_field_visibility")
+}
+
+model WhatsappClickLog {
+  id           String   @id @default(uuid())
+  listingId    String
+  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  clickedAt    DateTime @default(now())
+  clientIpHash String?
+
+  @@map("whatsapp_click_log")
+}
+
+// ---------------------------------------------------------------
+// GIS MODULE (Phase 2 — FR23-FR25)
+// ---------------------------------------------------------------
+
+model GisRequest {
+  id               String            @id @default(uuid())
+  clientId         String
+  client           User              @relation("ClientGisRequests", fields: [clientId], references: [id])
+  parcelLat        Float
+  parcelLng        Float
+  purpose          String
+  status           GisRequestStatus  @default(REQUESTED)
+  assignedAgentId  String?
+  assignedAgent    User?             @relation("AssignedSurveyor", fields: [assignedAgentId], references: [id])
+  reportUrl        String?
+  boundaryGeoJson  Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("gis_requests")
+}
+
+// ---------------------------------------------------------------
+// JOBS MODULE (Phase 3 — FR26-FR28)
+// ---------------------------------------------------------------
+
+model Job {
+  id           String     @id @default(uuid())
+  employerId   String
+  employer     User       @relation("Employer", fields: [employerId], references: [id])
+  title        String
+  description  String     @db.Text
+  location     String?
+  salaryRange  String?
+  deadline     DateTime?
+  status       JobStatus  @default(PENDING_REVIEW)
+  createdAt    DateTime   @default(now())
+
+  applications JobApplication[]
+
+  @@map("jobs")
+}
+
+model JobApplication {
+  id         String   @id @default(uuid())
+  jobId      String
+  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  clientId   String
+  client     User     @relation("Applicant", fields: [clientId], references: [id])
+  cvUrl      String?
+  appliedAt  DateTime @default(now())
+  status     String   @default("submitted")
+
+  @@map("job_applications")
+}
+
+// ---------------------------------------------------------------
+// MARKET / ISOKO MODULE (Phase 2 — FR34-FR37)
+// Self-serve: any CLIENT can post, no Admin-created account needed
+// (unlike Agent for property). Same approval gate as property (BR12).
+// ---------------------------------------------------------------
+
+model MarketItem {
+  id            String            @id @default(uuid())
+  sellerId      String
+  seller        User              @relation("Seller", fields: [sellerId], references: [id])
+  category      String            // free-ish category, e.g. electronics, produce, furniture
+  title         String
+  description   String            @db.Text
+  price         Decimal           @db.Decimal(14, 2)
+  currency      String            @default("RWF")
+  district      String?
+  sector        String?
+  status        ListingLiteStatus @default(PENDING_REVIEW)
+  isPromoted    Boolean           @default(false) // FR43 — set true only after verified MoMo callback
+  promotedUntil DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  media         MarketItemMedia[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@map("market_items")
+}
+
+model MarketItemMedia {
+  id           String     @id @default(uuid())
+  marketItemId String
+  marketItem   MarketItem @relation(fields: [marketItemId], references: [id], onDelete: Cascade)
+  url          String
+  sortOrder    Int        @default(0)
+
+  @@map("market_item_media")
+}
+
+// ---------------------------------------------------------------
+// SERVICES MODULE (Phase 2 — FR38-FR41)
+// One-to-one with User — a Client "upgrades" their own account by
+// registering a provider profile, still self-serve (BR12 applies).
+// ---------------------------------------------------------------
+
+model ServiceProvider {
+  id               String            @id @default(uuid())
+  userId           String            @unique
+  user             User              @relation("ProviderProfile", fields: [userId], references: [id])
+  category         String            // e.g. plumbing, tutoring, transport, tailoring
+  description      String            @db.Text
+  rateInfo         String?           // free text, e.g. "5,000 RWF/hour" — kept flexible for MVP
+  coverageDistrict String?
+  coverageSector   String?
+  status           ListingLiteStatus @default(PENDING_REVIEW)
+  isPromoted       Boolean           @default(false)
+  promotedUntil    DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([status])
+  @@map("service_providers")
+}
+
+// ---------------------------------------------------------------
+// MTN MOMO PAYMENTS (Phase 3 — FR42-FR46, BR13, BR14)
+// ---------------------------------------------------------------
+
+model Transaction {
+  id               String                @id @default(uuid())
+  userId           String
+  user             User                  @relation("PayingUser", fields: [userId], references: [id])
+  referenceType    PaymentReferenceType
+  referenceId      String                // id of the Listing/MarketItem/ServiceProvider/Job being promoted
+  amount           Decimal               @db.Decimal(12, 2)
+  currency         String                @default("RWF")
+  momoTransactionRef String?             @unique // set once MoMo returns a reference for the Request-to-Pay
+  status           TransactionStatus     @default(PENDING)
+  initiatedAt      DateTime              @default(now())
+  confirmedAt      DateTime?             // set only when a verified callback arrives (BR14)
+
+  @@index([userId])
+  @@index([referenceType, referenceId])
+  @@map("transactions")
+}

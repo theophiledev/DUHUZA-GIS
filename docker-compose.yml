@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: duhuza-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: duhuza
+      POSTGRES_PASSWORD: duhuza
+      POSTGRES_DB: property_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - duhuza_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U duhuza -d property_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  duhuza_pgdata:
