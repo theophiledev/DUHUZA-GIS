@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../components/DashboardLayout';
 import { Button, Card, ErrorAlert, Input, Select } from '../../components/ui';
 import { useLanguage } from '../../context/LanguageContext';
 import type { LanguageCode, Role } from '../../types';
+import { Lightbulb, Lock } from 'lucide-react';
 
 export function AdminCreateUserPage() {
   const { tr } = useLanguage();
@@ -138,14 +139,14 @@ export function AdminCreateUserPage() {
         <div className="space-y-4">
           <Card className="bg-gradient-to-br from-indigo-50/60 to-purple-50/40 border border-indigo-100 p-5">
             <h4 className="font-bold text-gray-900 flex items-center gap-2">
-              <span>💡</span>
+              <Lightbulb size={18} strokeWidth={1.75} />
               <span>Selected Role: {form.role}</span>
             </h4>
             <p className="mt-2 text-xs text-gray-600 leading-relaxed">
               {roleDescriptions[form.role]}
             </p>
             <div className="mt-4 pt-3 border-t border-indigo-100/80 text-xs text-indigo-900 font-medium">
-              🔒 Note: Agents and Managers can only be created by an Admin (FR1, BR11).
+              <span className="inline-flex items-center gap-1.5"><Lock size={14} strokeWidth={1.75} />Note: Agents and Managers can only be created by an Admin (FR1, BR11).</span>
             </div>
           </Card>
         </div>

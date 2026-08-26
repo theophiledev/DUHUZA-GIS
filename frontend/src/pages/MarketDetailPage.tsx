@@ -8,6 +8,7 @@ import { ImageLightbox } from '../components/ImageLightbox';
 import { DetailSkeleton } from '../components/SkeletonLoaders';
 import { showToast } from '../components/Toast';
 import { useLanguage } from '../context/LanguageContext';
+import { Share2 } from 'lucide-react';
 import { PinIcon } from '../components/FilterBar';
 import type { MarketItem } from '../types';
 
@@ -65,7 +66,7 @@ export function MarketDetailPage() {
           onClick={handleShare}
           className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition"
         >
-          <span>🔗</span>
+          <Share2 size={16} strokeWidth={1.75} />
           <span>Share Item</span>
         </button>
       </div>

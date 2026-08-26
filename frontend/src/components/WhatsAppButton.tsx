@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { Button } from './ui';
 
 interface WhatsAppButtonProps {
@@ -31,7 +32,7 @@ export function WhatsAppButton({ fetchUrl, label, className = '' }: WhatsAppButt
         disabled={loading}
         className={`bg-[#25D366] hover:bg-[#1da851] ${className}`}
       >
-        {loading ? '...' : `📱 ${label}`}
+        {loading ? '...' : <span className="inline-flex items-center gap-2"><MessageCircle size={18} strokeWidth={1.75} />{label}</span>}
       </Button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

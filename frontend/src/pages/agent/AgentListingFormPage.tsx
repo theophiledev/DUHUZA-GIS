@@ -7,6 +7,8 @@ import { MediaUploader } from '../../components/MediaUploader';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { getCells, getDistricts, getSectors, getVillages, getProvinceForDistrict, rwandaProvinces } from '../../utils/rwandaLocations';
+import { FileText, Home, Image, MapPin } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 export function AgentListingFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -124,7 +126,7 @@ export function AgentListingFormPage() {
           {/* Section 1: Basic Classification */}
           <div className="space-y-3">
             <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-              <span>🏠</span>
+              <Home size={18} strokeWidth={1.75} />
               <span>Classification & Pricing</span>
             </h3>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -161,7 +163,7 @@ export function AgentListingFormPage() {
           {/* Section 2: Title & Description */}
           <div className="space-y-3">
             <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-              <span>📝</span>
+              <FileText size={18} strokeWidth={1.75} />
               <span>Public Details</span>
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -200,7 +202,7 @@ export function AgentListingFormPage() {
           {/* Section 3: Enhanced Multi-Media Uploader */}
           <div className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50/50 p-5">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span>📸</span>
+              <Image size={18} strokeWidth={1.75} />
               <span>Property Photos & Media Gallery</span>
             </h3>
             <MediaUploader
@@ -208,14 +210,14 @@ export function AgentListingFormPage() {
               onChange={setMediaUrls}
               maxFiles={12}
               label="Upload Property Images"
-              helperText="Add high quality photos. The first image marked with ⭐ will be used as the primary cover card photo."
+              helperText="Add high quality photos. The first image will be used as the primary cover card photo."
             />
           </div>
 
           {/* Section 4: Rwanda Administrative Hierarchy */}
           <div className="space-y-3">
             <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-              <span>📍</span>
+              <MapPin size={18} strokeWidth={1.75} />
               <span>Rwanda Administrative Location</span>
             </h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -326,7 +328,7 @@ export function AgentListingFormPage() {
           {/* Section 5: Private Owner Data */}
           <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-3">
             <h3 className="font-bold text-amber-950 flex items-center gap-2">
-              <span>🔒</span>
+              <Lock size={18} strokeWidth={1.75} />
               <span>Private Owner Information (Never Shown Publicly)</span>
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">

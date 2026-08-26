@@ -8,6 +8,7 @@ import { Card, EmptyState, PageHeader } from '../components/ui';
 import { Pagination } from '../components/Pagination';
 import { useLanguage } from '../context/LanguageContext';
 import type { ServiceProvider } from '../types';
+import { MapPin } from 'lucide-react';
 
 export function ServicesPage() {
   const { tr } = useLanguage();
@@ -85,7 +86,7 @@ export function ServicesPage() {
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  📍 Coverage: {p.coverageDistrict || 'Rwanda'}
+                  <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />Coverage: {p.coverageDistrict || 'Rwanda'}</span>
                 </p>
 
                 <p className="line-clamp-3 flex-1 text-xs text-gray-600 leading-relaxed bg-gray-50 p-2.5 rounded-lg">

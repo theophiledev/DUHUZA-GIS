@@ -61,6 +61,34 @@ async function main() {
 
   console.log('Seeded Users: Admin, Manager, Agent/Surveyor, Client');
 
+  const clientTwo = await prisma.user.upsert({
+    where: { email: 'employer@duhuza.rw' },
+    update: {},
+    create: {
+      name: 'Diane Mukamana',
+      email: 'employer@duhuza.rw',
+      phone: '+250788500005',
+      passwordHash,
+      role: 'CLIENT',
+      preferredLanguage: 'EN',
+    },
+  });
+
+  const clientThree = await prisma.user.upsert({
+    where: { email: 'applicant@duhuza.rw' },
+    update: {},
+    create: {
+      name: 'Eric Niyonzima',
+      email: 'applicant@duhuza.rw',
+      phone: '+250788600006',
+      passwordHash,
+      role: 'CLIENT',
+      preferredLanguage: 'RW',
+    },
+  });
+
+  console.log('Seeded additional demo users: Employer and Applicant');
+
   // 2. Listings
   const listing1 = await prisma.listing.create({
     data: {
@@ -327,7 +355,105 @@ async function main() {
 
   console.log('Seeded GIS Requests with GeoJSON boundaries');
 
-  // 4. Market Items
+  // 4. Jobs
+  const sampleJobs = [
+    {
+      title: 'Frontend Developer - React and TypeScript',
+      description: 'Build accessible, responsive interfaces for a growing Rwanda-based property technology platform. Two years of React experience and strong TypeScript fundamentals are preferred.',
+      location: 'Kigali, Gasabo',
+      salaryRange: '800,000 - 1,200,000 RWF/month',
+      deadline: new Date('2026-10-15T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+    {
+      title: 'Land Survey Technician',
+      description: 'Support cadastral boundary surveys, GNSS field data collection, and preparation of GIS deliverables for residential and commercial land projects.',
+      location: 'Kigali and Eastern Province',
+      salaryRange: '600,000 - 900,000 RWF/month',
+      deadline: new Date('2026-09-30T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+    {
+      title: 'Customer Support and Listings Coordinator',
+      description: 'Help customers publish accurate property and marketplace listings, respond to support requests, and coordinate verification with field teams.',
+      location: 'Kigali, Nyarugenge',
+      salaryRange: '450,000 - 650,000 RWF/month',
+      deadline: new Date('2026-09-20T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+    {
+      title: 'Agribusiness Operations Intern',
+      description: 'Assist with supplier coordination, field records, and market research for agricultural products moving through Rwanda supply chains.',
+      location: 'Huye, Southern Province',
+      salaryRange: '150,000 RWF/month stipend',
+      deadline: new Date('2026-09-10T23:59:59.000Z'),
+      status: 'PENDING_REVIEW',
+    },
+    {
+      title: 'Digital Marketing Specialist',
+      description: 'Plan and deliver campaigns that help Rwandan customers discover trusted properties, local services, and marketplace opportunities through digital channels.',
+      location: 'Kigali, Kicukiro',
+      salaryRange: '700,000 - 1,000,000 RWF/month',
+      deadline: new Date('2026-10-05T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+    {
+      title: 'Operations and Partnerships Manager',
+      description: 'Build relationships with property agents, surveyors, service providers, and local institutions while improving marketplace operations across Rwanda.',
+      location: 'Kigali, Nyarugenge',
+      salaryRange: '1,200,000 - 1,800,000 RWF/month',
+      deadline: new Date('2026-10-25T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+    {
+      title: 'Graphic Design and Content Intern',
+      description: 'Create clear, engaging visual content for property campaigns, service providers, social media, and customer education materials.',
+      location: 'Kigali, Gasabo',
+      salaryRange: '200,000 RWF/month stipend',
+      deadline: new Date('2026-09-28T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+    {
+      title: 'Field Logistics Coordinator',
+      description: 'Coordinate survey appointments, route planning, equipment handoffs, and field-team communication for land and property assignments.',
+      location: 'Kigali and nationwide',
+      salaryRange: '550,000 - 800,000 RWF/month',
+      deadline: new Date('2026-10-12T23:59:59.000Z'),
+      status: 'PUBLISHED',
+    },
+  ];
+
+  const seededJobs = [];
+  for (const sampleJob of sampleJobs) {
+    const existingJob = await prisma.job.findFirst({
+      where: { title: sampleJob.title, employerId: clientTwo.id },
+    });
+    const job = existingJob || await prisma.job.create({
+      data: { employerId: clientTwo.id, ...sampleJob },
+    });
+    seededJobs.push(job);
+  }
+
+  const firstPublishedJob = seededJobs.find((job) => job.status === 'PUBLISHED');
+  if (firstPublishedJob) {
+    const existingApplication = await prisma.jobApplication.findFirst({
+      where: { jobId: firstPublishedJob.id, clientId: clientThree.id },
+    });
+    if (!existingApplication) {
+      await prisma.jobApplication.create({
+        data: {
+          jobId: firstPublishedJob.id,
+          clientId: clientThree.id,
+          cvUrl: 'https://example.com/demo-eric-niyonzima-cv.pdf',
+          status: 'submitted',
+        },
+      });
+    }
+  }
+
+  console.log('Seeded Jobs and one sample application');
+
+  // 5. Market Items
   await prisma.marketItem.create({
     data: {
       sellerId: client.id,
@@ -386,7 +512,7 @@ async function main() {
     },
   });
 
-  // 5. Service Providers
+  // 6. Service Providers
   await prisma.serviceProvider.upsert({
     where: { userId: agent.id },
     update: {},

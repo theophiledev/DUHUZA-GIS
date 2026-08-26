@@ -5,6 +5,7 @@ import { formatPrice } from './ui';
 import { PinIcon } from './FilterBar';
 import { isFavorite, toggleFavorite } from '../utils/favorites';
 import { SmartImage } from './SmartImage';
+import { Bath, BedDouble, Heart, Ruler, Tag } from 'lucide-react';
 
 function FavoriteButton({ id, type }: { id: string; type: 'listing' | 'market' }) {
   const [fav, setFav] = useState(() => isFavorite(type, id));
@@ -20,16 +21,16 @@ function FavoriteButton({ id, type }: { id: string; type: 'listing' | 'market' }
       }}
       className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg shadow-md backdrop-blur transition hover:scale-110"
     >
-      {fav ? '❤️' : '🤍'}
+      <Heart size={18} strokeWidth={1.75} fill={fav ? 'currentColor' : 'none'} />
     </button>
   );
 }
 
-function SpecBadge({ icon, value }: { icon: string; value: string }) {
+function SpecBadge({ icon, value }: { icon: React.ReactNode; value: string }) {
   if (!value) return null;
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-      <span>{icon}</span>{value}
+      <span className="flex items-center">{icon}</span>{value}
     </span>
   );
 }
@@ -64,11 +65,11 @@ export function ListingCard({ listing }: { listing: PublicListing }) {
             <span className="line-clamp-1">{location}</span>
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <SpecBadge icon="🛏️" value={attrs.bedrooms} />
-            <SpecBadge icon="🚿" value={attrs.bathrooms} />
-            <SpecBadge icon="📐" value={attrs.land_size_sqm ? `${attrs.land_size_sqm} m²` : attrs.area} />
+            <SpecBadge icon={<BedDouble size={14} strokeWidth={1.75} />} value={attrs.bedrooms} />
+            <SpecBadge icon={<Bath size={14} strokeWidth={1.75} />} value={attrs.bathrooms} />
+            <SpecBadge icon={<Ruler size={14} strokeWidth={1.75} />} value={attrs.land_size_sqm ? `${attrs.land_size_sqm} m²` : attrs.area} />
             {!attrs.bedrooms && !attrs.bathrooms && !attrs.land_size_sqm && !attrs.area && (
-              <SpecBadge icon="🏷️" value={listing.listingType} />
+              <SpecBadge icon={<Tag size={14} strokeWidth={1.75} />} value={listing.listingType} />
             )}
           </div>
         </div>

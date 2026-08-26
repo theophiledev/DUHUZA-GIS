@@ -51,6 +51,7 @@ async function searchJobs(req, res) {
 
   const jobs = await prisma.job.findMany({
     where,
+    include: { employer: { select: { id: true, name: true } } },
     orderBy: { createdAt: 'desc' },
     take,
     skip,
@@ -60,7 +61,10 @@ async function searchJobs(req, res) {
 }
 
 async function getPublicJob(req, res) {
-  const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+  const job = await prisma.job.findUnique({
+    where: { id: req.params.id },
+    include: { employer: { select: { id: true, name: true } } },
+  });
   if (!job || job.status !== 'PUBLISHED') return res.status(404).json({ error: 'Job not found' });
   return res.json(job);
 }

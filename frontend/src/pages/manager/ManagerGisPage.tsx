@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { assignGis, listUsers, pendingGis } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Button, Card, EmptyState, ErrorAlert, LoadingSpinner, StatusBadge } from '../../components/ui';
+import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { AdminUser, GisRequest } from '../../types';
+import { MapPin, ExternalLink, FileText } from 'lucide-react';
 
 export function ManagerGisPage() {
   const { tr } = useLanguage();
@@ -44,6 +46,7 @@ export function ManagerGisPage() {
     setAssigning(gisId);
     try {
       await assignGis(gisId, aid);
+      showToast('Cadastral survey mission assigned to surveyor!', 'success');
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -58,8 +61,10 @@ export function ManagerGisPage() {
       subtitle="Dispatch certified field surveyors (agents) for cadastral boundary demarcations, UPI mapping, and master plan surveys."
       actions={
         <Link to="/gis">
-          <Button variant="secondary" className="shadow-sm">
-            🗺️ Open Interactive GIS Map
+          <Button variant="secondary" className="shadow-xs flex items-center gap-1.5">
+            <MapPin className="h-4 w-4 text-[#0F766E]" />
+            <span>Interactive GIS Map</span>
+            <ExternalLink className="h-3 w-3" />
           </Button>
         </Link>
       }
@@ -67,34 +72,34 @@ export function ManagerGisPage() {
       {loading && <LoadingSpinner label={tr('loading')} />}
       {error && <ErrorAlert message={error} onRetry={load} />}
       {!loading && !error && items.length === 0 && (
-        <EmptyState message="No pending GIS survey missions waiting for assignment." />
+        <EmptyState message="Nothing pending — you're caught up." />
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((r) => (
-          <Card key={r.id} className="p-5 border border-gray-200 shadow-sm hover:shadow-md transition space-y-4">
+          <Card key={r.id} statusRail="pending" className="p-5 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={r.status} />
-                  <span className="text-xs font-mono text-gray-400">ID: {r.id.slice(0, 8)}</span>
+                  <span className="text-xs font-mono-data text-gray-400">ID: {r.id.slice(0, 8)}</span>
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mt-1">{r.purpose}</h3>
+                <h3 className="font-heading font-bold text-gray-900 mt-1.5 text-base">{r.purpose}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Client: <span className="font-semibold text-gray-800">{r.client?.name}</span> ({r.client?.phone || '—'})
                 </p>
               </div>
 
               <div className="text-right">
-                <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-mono font-bold text-emerald-800">
-                  📍 {r.parcelLat}, {r.parcelLng}
+                <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-mono-data font-bold text-emerald-800">
+                  <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />{r.parcelLat}, {r.parcelLng}</span>
                 </span>
               </div>
             </div>
 
             {/* Assignment Box */}
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3.5 space-y-2">
-              <div className="text-xs font-bold text-gray-700">
+            <div className="rounded-xl border border-[#E2E8E6] bg-gray-50/70 p-3.5 space-y-2">
+              <div className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                 {r.assignedAgent ? 'Assigned Field Surveyor:' : 'Select Certified Surveyor (Agent):'}
               </div>
 
@@ -102,7 +107,7 @@ export function ManagerGisPage() {
                 <select
                   value={agentIds[r.id] || r.assignedAgentId || ''}
                   onChange={(e) => setAgentIds({ ...agentIds, [r.id]: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 focus:border-[#0F766E] focus:outline-none"
                 >
                   <option value="">-- Choose Active Surveyor Agent --</option>
                   {agents.map((ag) => (
@@ -114,7 +119,7 @@ export function ManagerGisPage() {
 
                 <Button
                   variant="primary"
-                  className="text-xs whitespace-nowrap px-4 py-1.5"
+                  className="text-xs whitespace-nowrap px-4 py-1.5 font-bold"
                   onClick={() => handleAssign(r.id)}
                   disabled={assigning === r.id}
                 >
@@ -131,9 +136,9 @@ export function ManagerGisPage() {
 
             {r.reportUrl && (
               <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                <span className="text-gray-500">Official Report Attached</span>
-                <a href={r.reportUrl} target="_blank" rel="noreferrer" className="font-bold text-brand-700 underline">
-                  Download Report 📄
+                <span className="text-emerald-700 font-semibold">Official Report Attached</span>
+                <a href={r.reportUrl} target="_blank" rel="noreferrer" className="font-bold text-[#0F766E] underline">
+                  <span className="inline-flex items-center gap-1"><FileText size={14} strokeWidth={1.75} />Download Report</span>
                 </a>
               </div>
             )}

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { createGisRequest, myGisRequests } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Button, Card, EmptyState, ErrorAlert, Input, LoadingSpinner, Select, StatusBadge } from '../../components/ui';
+import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { GisRequest } from '../../types';
+import { MapPin, PlusCircle, ExternalLink, FileText, CheckCircle2, Clock, UserCheck } from 'lucide-react';
 
 const SURVEY_PURPOSES = [
   { value: 'Boundary Demarcation / Verification (UPI)', label: 'Cadastral Boundary Demarcation / Verification (UPI)' },
@@ -50,6 +52,7 @@ export function ClientGisPage() {
         parcelLng: Number(form.parcelLng),
         purpose: purposeFinal,
       });
+      showToast('Land survey request submitted successfully!', 'success');
       setForm({ parcelLat: '-1.9501', parcelLng: '30.0589', purpose: SURVEY_PURPOSES[0].value, upiNumber: '' });
       setShowForm(false);
       load();
@@ -66,26 +69,35 @@ export function ClientGisPage() {
       subtitle="Request official land survey missions, cadastral demarcation, UPI verification, and download certified surveyor reports."
       actions={
         <div className="flex gap-2">
-          <Button variant="primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Hide Form' : '➕ Request New Survey'}
+          <Button variant="primary" onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 font-bold shadow-xs">
+            <PlusCircle className="h-4 w-4" />
+            <span>{showForm ? 'Hide Form' : 'Request New Survey'}</span>
           </Button>
           <Link to="/gis">
-            <Button variant="secondary">🗺️ Open Map</Button>
+            <Button variant="secondary" className="flex items-center gap-1.5 font-semibold">
+              <MapPin className="h-4 w-4 text-[#0F766E]" />
+              <span>Open Map</span>
+            </Button>
           </Link>
         </div>
       }
     >
       {/* Request Form Drawer / Card */}
       {showForm && (
-        <Card className="mb-6 p-6 border-2 border-brand-300 shadow-lg bg-gradient-to-br from-white to-emerald-50/30 animate-fadeIn">
+        <Card statusRail="approved" className="mb-6 p-6 border-[#E2E8E6] shadow-md bg-gradient-to-br from-white to-teal-50/30 animate-fadeIn">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
             <div>
-              <h3 className="font-bold text-gray-900 text-lg">Submit Land Survey Request</h3>
+              <h3 className="font-heading font-bold text-gray-900 text-lg">Submit Land Survey Request</h3>
               <p className="text-xs text-gray-500">
                 A licensed surveyor accredited by RLMUA will be assigned to survey your parcel.
               </p>
             </div>
-            <button type="button" onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-700">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="text-gray-400 hover:text-gray-700 p-1"
+              aria-label="Close form"
+            >
               ✕
             </button>
           </div>
@@ -133,7 +145,7 @@ export function ClientGisPage() {
               <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>
                 {tr('cancel')}
               </Button>
-              <Button type="submit" disabled={submitting} className="px-6 shadow-md">
+              <Button type="submit" disabled={submitting} className="px-6 font-bold shadow-xs">
                 {submitting ? tr('loading') : 'Submit Survey Request'}
               </Button>
             </div>
@@ -144,7 +156,11 @@ export function ClientGisPage() {
       {loading && <LoadingSpinner label={tr('loading')} />}
       {error && <ErrorAlert message={error} onRetry={load} />}
       {!loading && !error && requests.length === 0 && (
-        <EmptyState message="You have not requested any land surveys yet. Click 'Request New Survey' above to start!" />
+        <EmptyState
+          message="You have not requested any land surveys yet."
+          actionLabel="Request New Survey"
+          onAction={() => setShowForm(true)}
+        />
       )}
 
       {/* Survey Requests Timeline List */}
@@ -152,18 +168,19 @@ export function ClientGisPage() {
         {requests.map((r) => {
           const stepIndex =
             r.status === 'REQUESTED' ? 1 : r.status === 'ASSIGNED' ? 2 : r.status === 'IN_PROGRESS' ? 3 : 4;
+          const normStatus = r.status.toLowerCase().replace(/_/g, '-');
 
           return (
-            <Card key={r.id} className="p-5 border border-gray-200 shadow-sm space-y-4">
+            <Card key={r.id} statusRail={normStatus as any} className="p-5 border-[#E2E8E6] shadow-sm space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={r.status} />
-                    <span className="text-xs font-mono text-gray-400">ID: {r.id.slice(0, 8)}</span>
+                    <span className="text-xs font-mono-data text-gray-400">ID: {r.id.slice(0, 8)}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mt-1">{r.purpose}</h3>
+                  <h3 className="font-heading text-lg font-bold text-gray-900 mt-1">{r.purpose}</h3>
                   <p className="text-xs text-gray-500">
-                    Submitted on: {new Date(r.createdAt).toLocaleDateString()} · 📍 Coordinates: {r.parcelLat}, {r.parcelLng}
+                    Submitted on: {new Date(r.createdAt).toLocaleDateString()} · <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />Coordinates: {r.parcelLat}, {r.parcelLng}</span>
                   </p>
                 </div>
 
@@ -172,65 +189,43 @@ export function ClientGisPage() {
                     href={r.reportUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition"
                   >
-                    <span>📄</span>
+                    <FileText className="h-4 w-4" />
                     <span>Download Official Report</span>
+                    <ExternalLink className="h-3 w-3 ml-0.5" />
                   </a>
                 )}
               </div>
 
-              {/* Progress Steps Visualizer */}
-              <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-4">
-                <div className="text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider">Survey Progress:</div>
-                <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                  <div
-                    className={`rounded-lg p-2 font-semibold ${
-                      stepIndex >= 1 ? 'bg-brand-600 text-white shadow-sm' : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    1. Requested
+              {/* Progress Milestones Bar */}
+              <div className="rounded-xl bg-gray-50/80 border border-gray-100 p-4">
+                <div className="grid grid-cols-4 text-center text-xs">
+                  <div className={`space-y-1 ${stepIndex >= 1 ? 'text-[#0F766E] font-bold' : 'text-gray-400'}`}>
+                    <div className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-teal-100 text-[#0F766E]">
+                      <Clock className="h-3.5 w-3.5" />
+                    </div>
+                    <span>1. Requested</span>
                   </div>
-                  <div
-                    className={`rounded-lg p-2 font-semibold ${
-                      stepIndex >= 2 ? 'bg-brand-600 text-white shadow-sm' : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    2. Surveyor Assigned
+                  <div className={`space-y-1 ${stepIndex >= 2 ? 'text-[#0F766E] font-bold' : 'text-gray-400'}`}>
+                    <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full ${stepIndex >= 2 ? 'bg-teal-100 text-[#0F766E]' : 'bg-gray-100 text-gray-400'}`}>
+                      <UserCheck className="h-3.5 w-3.5" />
+                    </div>
+                    <span>2. Surveyor Assigned</span>
                   </div>
-                  <div
-                    className={`rounded-lg p-2 font-semibold ${
-                      stepIndex >= 3 ? 'bg-brand-600 text-white shadow-sm' : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    3. Field Work (RTK)
+                  <div className={`space-y-1 ${stepIndex >= 3 ? 'text-[#0F766E] font-bold' : 'text-gray-400'}`}>
+                    <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full ${stepIndex >= 3 ? 'bg-teal-100 text-[#0F766E]' : 'bg-gray-100 text-gray-400'}`}>
+                      <MapPin className="h-3.5 w-3.5" />
+                    </div>
+                    <span>3. Field Survey</span>
                   </div>
-                  <div
-                    className={`rounded-lg p-2 font-semibold ${
-                      stepIndex >= 4 ? 'bg-emerald-600 text-white shadow-sm' : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    4. Report Ready ✓
+                  <div className={`space-y-1 ${stepIndex >= 4 ? 'text-emerald-700 font-bold' : 'text-gray-400'}`}>
+                    <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full ${stepIndex >= 4 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    </div>
+                    <span>4. Certified</span>
                   </div>
                 </div>
-
-                {r.assignedAgent && (
-                  <div className="mt-3 pt-2 border-t border-gray-200/80 text-xs text-gray-700 flex items-center justify-between">
-                    <span>
-                      Assigned Surveyor: <strong>{r.assignedAgent.name}</strong>
-                    </span>
-                    {r.assignedAgent.phone && (
-                      <a
-                        href={`https://wa.me/${r.assignedAgent.phone.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-emerald-700 font-bold hover:underline"
-                      >
-                        Contact Surveyor (WhatsApp) 💬
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
             </Card>
           );

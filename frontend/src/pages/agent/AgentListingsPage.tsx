@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { myListings, submitListing } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
@@ -16,9 +16,11 @@ import { TableSkeleton } from '../../components/SkeletonLoaders';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { InternalListing } from '../../types';
+import { PlusCircle, Edit3, Send, ExternalLink, AlertTriangle, MapPin } from 'lucide-react';
 
 export function AgentListingsPage() {
   const { tr } = useLanguage();
+  const navigate = useNavigate();
   const [listings, setListings] = useState<InternalListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,7 +49,7 @@ export function AgentListingsPage() {
     setActionLoading(true);
     try {
       await submitListing(id);
-      showToast('Listing submitted to managers for review!', 'success');
+      showToast('Listing submitted for review!', 'success');
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -82,7 +84,10 @@ export function AgentListingsPage() {
       subtitle="Manage your property listings portfolio, review approval states, and resubmit rejected drafts."
       actions={
         <Link to="/dashboard/agent/listings/new">
-          <Button variant="primary">➕ {tr('createListing')}</Button>
+          <Button variant="primary" className="flex items-center gap-1.5 font-bold shadow-sm">
+            <PlusCircle className="h-4 w-4" />
+            <span>{tr('createListing')}</span>
+          </Button>
         </Link>
       }
     >
@@ -105,7 +110,7 @@ export function AgentListingsPage() {
               }}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 transition ${
                 selectedStatus === tab.id
-                  ? 'bg-brand-600 text-white font-bold shadow-sm'
+                  ? 'bg-[#0F766E] text-white font-bold shadow-xs'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -125,7 +130,11 @@ export function AgentListingsPage() {
       {loading && <TableSkeleton rows={4} cols={4} />}
       {error && <ErrorAlert message={error} onRetry={load} />}
       {!loading && !error && filteredListings.length === 0 && (
-        <EmptyState message="No listings found matching this status filter." />
+        <EmptyState
+          message="No listings yet. Create your first one to get started."
+          actionLabel={`+ ${tr('createListing')}`}
+          onAction={() => navigate('/dashboard/agent/listings/new')}
+        />
       )}
 
       {!loading && filteredListings.length > 0 && (
@@ -136,13 +145,13 @@ export function AgentListingsPage() {
             const photos = l.media || [];
             const isRejected = l.status === 'REJECTED';
             const rejectionNote = l.statusHistory?.[0]?.comment;
+            const normStatus = l.status.toLowerCase().replace(/_/g, '-');
 
             return (
               <Card
                 key={l.id}
-                className={`overflow-hidden p-0 border shadow-sm transition hover:shadow-md ${
-                  isRejected ? 'border-red-300 bg-red-50/10' : 'border-gray-200 bg-white'
-                }`}
+                statusRail={normStatus as any}
+                className="overflow-hidden p-0 border-[#E2E8E6] shadow-sm transition hover:shadow-md"
               >
                 <div className="flex flex-col md:flex-row">
                   {/* Photo Preview */}
@@ -163,19 +172,19 @@ export function AgentListingsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded bg-brand-100 text-brand-800 px-2 py-0.5 text-xs font-bold uppercase">
+                          <span className="rounded-md bg-teal-50 text-[#0F766E] px-2 py-0.5 text-xs font-bold uppercase tracking-wider">
                             {l.category} · {l.listingType}
                           </span>
                           <StatusBadge status={l.status} />
                         </div>
-                        <h3 className="text-base font-bold text-gray-900 mt-1">{title}</h3>
+                        <h3 className="font-heading text-base font-bold text-gray-900 mt-1">{title}</h3>
                         <p className="text-xs text-gray-500">
-                          📍 {l.district || 'Rwanda'}, {l.sector || ''} {l.cell || ''}
+                          <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />{l.district || 'Rwanda'}, {l.sector || ''} {l.cell || ''}</span>
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-lg font-extrabold text-brand-700">
+                        <div className="font-heading text-lg font-extrabold text-[#0F766E]">
                           {formatPrice(l.price, l.currency)}
                         </div>
                       </div>
@@ -187,9 +196,12 @@ export function AgentListingsPage() {
                     {isRejected && (
                       <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-900 space-y-1">
                         <div className="font-bold flex items-center gap-1.5 text-red-950">
-                          <span>⚠️ Manager Feedback:</span>
+                          <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                          <span>Manager Feedback:</span>
                         </div>
-                        <p>{rejectionNote || 'Please review your listing specifications, photo URLs, or pricing and resubmit.'}</p>
+                        <p className="leading-relaxed">
+                          {rejectionNote || 'Please review your listing specifications, photo URLs, or pricing and resubmit.'}
+                        </p>
                       </div>
                     )}
 
@@ -203,24 +215,31 @@ export function AgentListingsPage() {
                         {['DRAFT', 'REJECTED'].includes(l.status) && (
                           <>
                             <Link to={`/dashboard/agent/listings/${l.id}/edit`}>
-                              <Button variant="secondary" className="text-xs">
-                                ✏️ Edit Details
+                              <Button variant="secondary" className="text-xs flex items-center gap-1">
+                                <Edit3 className="h-3.5 w-3.5" />
+                                <span>Edit Details</span>
                               </Button>
                             </Link>
                             <Button
                               variant="primary"
-                              className="text-xs shadow-sm"
+                              className="text-xs font-bold shadow-xs flex items-center gap-1"
                               onClick={() => handleSubmit(l.id)}
                               disabled={actionLoading}
                             >
-                              🚀 {tr('submitForReview')}
+                              <Send className="h-3.5 w-3.5" />
+                              <span>{tr('submitForReview')}</span>
                             </Button>
                           </>
                         )}
 
                         {l.status === 'PUBLISHED' && (
-                          <Link to={`/listings/${l.id}`} target="_blank" className="font-semibold text-brand-700 hover:underline">
-                            View Public Page ↗
+                          <Link
+                            to={`/listings/${l.id}`}
+                            target="_blank"
+                            className="font-bold text-[#0F766E] hover:underline flex items-center gap-1"
+                          >
+                            <span>View Public Page</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
                           </Link>
                         )}
                       </div>

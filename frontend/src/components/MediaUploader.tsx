@@ -1,5 +1,6 @@
 import { useState, useRef, type ChangeEvent, type DragEvent } from 'react';
 import { Button } from './ui';
+import { AlertTriangle, FileText, Star, Trash2, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface MediaFile {
   url: string;
@@ -126,7 +127,7 @@ export function MediaUploader({
 
       {errorMsg && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700 font-medium">
-          ⚠️ {errorMsg}
+          <AlertTriangle size={16} strokeWidth={1.75} /> {errorMsg}
         </div>
       )}
 
@@ -152,7 +153,7 @@ export function MediaUploader({
         />
 
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-2xl text-brand-700 mb-2">
-          📸
+          <Upload size={24} strokeWidth={1.75} />
         </div>
         <p className="text-sm font-bold text-gray-800">
           Click to upload files <span className="font-normal text-gray-500">or drag and drop</span>
@@ -206,7 +207,7 @@ export function MediaUploader({
                 <div className="aspect-[4/3] w-full bg-gray-100 overflow-hidden flex items-center justify-center">
                   {isPdf ? (
                     <div className="flex flex-col items-center justify-center p-2 text-center text-red-600">
-                      <span className="text-3xl">📄</span>
+                      <FileText size={30} strokeWidth={1.75} />
                       <span className="text-[10px] font-bold mt-1 text-gray-700">PDF Report</span>
                     </div>
                   ) : (
@@ -217,7 +218,7 @@ export function MediaUploader({
                 {/* Primary Cover Badge */}
                 {isCover && (
                   <span className="absolute top-1.5 left-1.5 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                    ⭐ Cover Photo
+                    <span className="inline-flex items-center gap-1"><Star size={12} strokeWidth={1.75} fill="currentColor" /> Cover Photo</span>
                   </span>
                 )}
 
@@ -231,7 +232,7 @@ export function MediaUploader({
                         className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                         title="Move left"
                       >
-                        ◀
+                        <ChevronLeft size={16} strokeWidth={1.75} />
                       </button>
                     )}
                     {idx < mediaUrls.length - 1 && (
@@ -241,7 +242,7 @@ export function MediaUploader({
                         className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                         title="Move right"
                       >
-                        ▶
+                        <ChevronRight size={16} strokeWidth={1.75} />
                       </button>
                     )}
                   </div>
@@ -254,7 +255,7 @@ export function MediaUploader({
                         className="rounded p-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50"
                         title="Set as cover photo"
                       >
-                        ⭐
+                        <Star size={16} strokeWidth={1.75} />
                       </button>
                     )}
                     <button
@@ -263,7 +264,7 @@ export function MediaUploader({
                       className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50"
                       title="Remove image"
                     >
-                      🗑️
+                      <Trash2 size={16} strokeWidth={1.75} />
                     </button>
                   </div>
                 </div>

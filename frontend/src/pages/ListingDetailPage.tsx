@@ -10,6 +10,7 @@ import { showToast } from '../components/Toast';
 import { useLanguage } from '../context/LanguageContext';
 import { PinIcon } from '../components/FilterBar';
 import type { PublicListing } from '../types';
+import { Search, Share2 } from 'lucide-react';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,7 +69,7 @@ export function ListingDetailPage() {
           onClick={handleShare}
           className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition"
         >
-          <span>🔗</span>
+          <Share2 size={16} strokeWidth={1.75} />
           <span>Share Property</span>
         </button>
       </div>
@@ -95,7 +96,7 @@ export function ListingDetailPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
               <span className="rounded-lg bg-black/70 px-3 py-1 text-xs font-bold text-white backdrop-blur">
-                🔍 Click to open full gallery ({mediaList.length} photos)
+                <span className="inline-flex items-center gap-1.5"><Search size={14} strokeWidth={1.75} />Click to open full gallery ({mediaList.length} photos)</span>
               </span>
             </div>
             <div className="absolute left-4 top-4 rounded-xl bg-white/95 px-3.5 py-1.5 text-base font-extrabold text-brand-700 shadow backdrop-blur">

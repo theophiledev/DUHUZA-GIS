@@ -103,6 +103,7 @@ export interface Job {
   deadline?: string | null;
   status: string;
   createdAt: string;
+  employer?: { id: string; name: string };
   _count?: { applications: number };
 }
 

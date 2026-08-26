@@ -9,14 +9,14 @@ npm install
 cp .env.example .env      # fill in DATABASE_URL, JWT_SECRET
 npx prisma migrate dev --name init
 # then run prisma/POSTGIS_NOTE.sql manually against your DB
-node prisma/seed.js       # creates first Admin account
+node prisma/seed.js       # creates demo users and reference records
 npm run dev               # http://localhost:4000
 ```
 
 ## API overview
 
 | Module | Base path | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Auth | `/api/auth` | Client self-register; agents/managers created by admin |
 | Listings | `/api/listings` | Public search; agent CRUD |
 | Manager | `/api/manager` | Approval queues (listings, market, services, GIS, jobs) |
@@ -31,7 +31,7 @@ Health: `GET /health`
 
 ## Folder structure
 
-```
+```text
 backend/
   src/
     app.js              Express app + middleware wiring
@@ -53,6 +53,19 @@ backend/
 ```bash
 npm test
 ```
+
+### Demo accounts
+
+The seed uses `ChangeMe123!` for all demo accounts:
+
+| Role | Email |
+| --- | --- |
+| Admin | `admin@bentechrwanda.com` |
+| Manager | `manager@duhuza.rw` |
+| Agent / Surveyor | `agent@duhuza.rw` |
+| Client | `client@duhuza.rw` |
+| Employer client | `employer@duhuza.rw` |
+| Applicant client | `applicant@duhuza.rw` |
 
 ## CORS
 

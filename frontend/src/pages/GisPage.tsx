@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { createGisRequest, myGisRequests } from '../api';
 import { Button, Card, EmptyState, ErrorAlert, Input, LoadingSpinner, PageHeader, Select, StatusBadge, Textarea } from '../components/ui';
 import type { GisRequest } from '../types';
+import { BadgeCheck, CheckCircle2, Clock, FileText, Lightbulb, Map, MapPin, MessageCircle, Satellite, Search, Send, Wallet, Zap } from 'lucide-react';
 
 interface SampleParcel {
   id: string;
@@ -178,7 +179,6 @@ export function GisPage() {
       className: 'gis-pin-wrapper',
       html: `
         <div style="background-color: #16a34a; width: 28px; height: 28px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
-          📍
         </div>
       `,
       iconSize: [28, 28],
@@ -407,12 +407,12 @@ export function GisPage() {
               </a>
               <a href="#interactive-map">
                 <Button variant="secondary" className="border-emerald-400/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 text-base py-2.5 px-5">
-                  🗺️ {tr('interactiveMap')}
+                  <span className="inline-flex items-center gap-2"><Map size={16} strokeWidth={1.75} />{tr('interactiveMap')}</span>
                 </Button>
               </a>
               <a href="#cost-estimator">
                 <Button variant="secondary" className="border-emerald-400/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 text-base py-2.5 px-5">
-                  💰 {tr('calcEstimate')}
+                  <span className="inline-flex items-center gap-2"><Wallet size={16} strokeWidth={1.75} />{tr('calcEstimate')}</span>
                 </Button>
               </a>
             </div>
@@ -518,7 +518,7 @@ export function GisPage() {
                     Cadastral Boundary
                   </span>
                 </div>
-                <span>💡 Click on any green polygon to view verified parcel UPI data</span>
+                <span className="inline-flex items-center gap-1"><Lightbulb size={14} strokeWidth={1.75} />Click on any green polygon to view verified parcel UPI data</span>
               </div>
             </div>
           </div>
@@ -534,7 +534,7 @@ export function GisPage() {
                     </span>
                     <h3 className="mt-1 text-base font-bold text-gray-900">{selectedParcel.upi}</h3>
                   </div>
-                  <span className="text-2xl">🗺️</span>
+                  <Map size={24} strokeWidth={1.75} className="text-brand-700" />
                 </div>
 
                 <div className="mt-3 space-y-2 text-sm">
@@ -561,7 +561,7 @@ export function GisPage() {
                 </div>
 
                 <div className="mt-4 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 border border-emerald-200">
-                  ✅ <strong>GeoJSON Coordinates Verified</strong>: 4 boundary beacons demarcated with RTK GNSS. Clean title ready for land transfer.
+                  <span className="inline-flex items-start gap-1"><CheckCircle2 size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" /><span><strong>GeoJSON Coordinates Verified</strong>: 4 boundary beacons demarcated with RTK GNSS. Clean title ready for land transfer.</span></span>
                 </div>
 
                 <a href="#survey-form" className="mt-4 block">
@@ -608,7 +608,7 @@ export function GisPage() {
 
               {submitSuccess ? (
                 <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-6 text-center">
-                  <div className="text-4xl">🎉</div>
+                  <CheckCircle2 size={40} strokeWidth={1.5} className="mx-auto text-green-600" />
                   <h3 className="mt-2 text-lg font-bold text-green-900">{tr('surveySuccessMsg')}</h3>
                   <p className="mt-1 text-sm text-green-700">
                     A licensed surveyor from Duhuza will reach out to you at {clientPhone || 'your contact phone'} within 2 hours.
@@ -721,7 +721,7 @@ export function GisPage() {
                   </div>
 
                   <Button type="submit" disabled={submitting} className="w-full font-bold py-3 text-base">
-                    {submitting ? tr('loading') : `🚀 ${tr('requestSurveyNow')}`}
+                    {submitting ? tr('loading') : <span className="inline-flex items-center gap-2"><Send size={18} strokeWidth={1.75} />{tr('requestSurveyNow')}</span>}
                   </Button>
                 </form>
               )}
@@ -732,7 +732,7 @@ export function GisPage() {
           <div id="cost-estimator" className="space-y-6 lg:col-span-5 scroll-mt-20">
             <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-white shadow-md">
               <div className="flex items-center gap-2 border-b border-emerald-100 pb-3">
-                <span className="text-2xl">💰</span>
+                <Wallet size={24} strokeWidth={1.75} className="text-emerald-700" />
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{tr('calcEstimate')}</h3>
                   <p className="text-xs text-gray-500">Transparent standard pricing for land surveys in Rwanda</p>
@@ -765,7 +765,7 @@ export function GisPage() {
                   <span className="text-xs font-medium text-gray-500">{tr('estCost')}</span>
                   <p className="mt-1 text-3xl font-extrabold text-brand-700">{getEstimatedPrice()} RWF</p>
                   <p className="mt-1 text-xs text-emerald-700 font-medium">
-                    ⚡ Includes RTK GNSS field survey, signed report, & boundary GeoJSON
+                    <span className="inline-flex items-center gap-1"><Zap size={14} strokeWidth={1.75} />Includes RTK GNSS field survey, signed report, & boundary GeoJSON</span>
                   </p>
                 </div>
               </div>
@@ -774,7 +774,7 @@ export function GisPage() {
             {/* TRACK EXISTING SURVEY */}
             <Card>
               <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-                <span className="text-xl">🔍</span>
+                <Search size={20} strokeWidth={1.75} className="text-brand-700" />
                 <div>
                   <h3 className="text-base font-bold text-gray-900">{tr('trackSurveyTitle')}</h3>
                   <p className="text-xs text-gray-500">Check survey progress, assigned surveyor & report status</p>
@@ -810,7 +810,7 @@ export function GisPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 font-bold text-brand-700 hover:underline"
                       >
-                        📄 Download Signed Cadastral Plan & Report (PDF)
+                        <span className="inline-flex items-center gap-1"><FileText size={14} strokeWidth={1.75} />Download Signed Cadastral Plan & Report (PDF)</span>
                       </a>
                     </div>
                   )}
@@ -833,7 +833,7 @@ export function GisPage() {
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 transition hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-2xl text-brand-700">
-              🏅
+              <BadgeCheck size={24} strokeWidth={1.75} />
             </div>
             <h3 className="mt-4 font-bold text-gray-900">{tr('certifiedSurveyors')}</h3>
             <p className="mt-2 text-xs text-gray-600 leading-relaxed">{tr('certifiedSurveyorsDesc')}</p>
@@ -841,7 +841,7 @@ export function GisPage() {
 
           <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 transition hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-2xl text-emerald-700">
-              📡
+              <Satellite size={24} strokeWidth={1.75} />
             </div>
             <h3 className="mt-4 font-bold text-gray-900">{tr('highPrecision')}</h3>
             <p className="mt-2 text-xs text-gray-600 leading-relaxed">{tr('highPrecisionDesc')}</p>
@@ -849,7 +849,7 @@ export function GisPage() {
 
           <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 transition hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-2xl text-sky-700">
-              📑
+              <FileText size={24} strokeWidth={1.75} />
             </div>
             <h3 className="mt-4 font-bold text-gray-900">{tr('officialReports')}</h3>
             <p className="mt-2 text-xs text-gray-600 leading-relaxed">{tr('officialReportsDesc')}</p>
@@ -857,7 +857,7 @@ export function GisPage() {
 
           <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 transition hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-2xl text-amber-700">
-              ⏱️
+              <Clock size={24} strokeWidth={1.75} />
             </div>
             <h3 className="mt-4 font-bold text-gray-900">{tr('fastDelivery')}</h3>
             <p className="mt-2 text-xs text-gray-600 leading-relaxed">{tr('fastDeliveryDesc')}</p>
@@ -879,12 +879,12 @@ export function GisPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="/images/gis_sample_report_preview.jpg" target="_blank" rel="noreferrer">
               <Button className="bg-brand-600 text-white hover:bg-brand-700 font-semibold text-sm">
-                📄 {tr('viewSampleReport')}
+                <span className="inline-flex items-center gap-2"><FileText size={16} strokeWidth={1.75} />{tr('viewSampleReport')}</span>
               </Button>
             </a>
             <a href="https://wa.me/250788100001?text=Hello%20Duhuza%20GIS%20Team%2C%20I%20would%20like%20to%20inquire%20about%20a%20land%20survey" target="_blank" rel="noreferrer">
               <Button variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 text-sm">
-                💬 {tr('contactWhatsapp')}
+                <span className="inline-flex items-center gap-2"><MessageCircle size={16} strokeWidth={1.75} />{tr('contactWhatsapp')}</span>
               </Button>
             </a>
           </div>
@@ -921,7 +921,7 @@ export function GisPage() {
                   <StatusBadge status={r.status} />
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
-                  📍 Coordinates: {r.parcelLat}, {r.parcelLng}
+                  <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />Coordinates: {r.parcelLat}, {r.parcelLng}</span>
                 </p>
                 {r.reportUrl && (
                   <div className="mt-3">
@@ -931,7 +931,7 @@ export function GisPage() {
                       rel="noreferrer"
                       className="text-xs font-bold text-brand-700 hover:underline"
                     >
-                      📄 Download Survey Plan
+                      <span className="inline-flex items-center gap-1"><FileText size={14} strokeWidth={1.75} />Download Survey Plan</span>
                     </a>
                   </div>
                 )}

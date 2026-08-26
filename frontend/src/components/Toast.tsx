@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CheckCircle2, Info, XCircle } from 'lucide-react';
 
 export interface ToastItem {
   id: string;
@@ -39,9 +40,9 @@ export function ToastContainer() {
   };
 
   const icons = {
-    success: '✓',
-    error: '✕',
-    info: 'ℹ️',
+    success: <CheckCircle2 size={16} strokeWidth={1.75} />,
+    error: <XCircle size={16} strokeWidth={1.75} />,
+    info: <Info size={16} strokeWidth={1.75} />,
   };
 
   return (

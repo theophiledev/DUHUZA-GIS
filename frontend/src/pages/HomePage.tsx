@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/ui';
+import { BriefcaseBusiness, Home, Map, Send, ShoppingBag, Wrench } from 'lucide-react';
 
 export function HomePage() {
   const { tr } = useLanguage();
@@ -11,7 +12,7 @@ export function HomePage() {
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-800 via-brand-700 to-emerald-950 px-6 py-16 text-white sm:px-12 sm:py-20 shadow-xl">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold tracking-wide text-brand-100 backdrop-blur">
-            🇷🇼 RWANDA'S MULTI-VERTICAL PROPERTY & LAND PLATFORM
+            RWANDA'S MULTI-VERTICAL PROPERTY & LAND PLATFORM
           </div>
           <h1 className="mt-4 text-3xl font-extrabold sm:text-5xl lg:text-6xl tracking-tight leading-tight">
             {tr('appName')}
@@ -23,22 +24,22 @@ export function HomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/listings">
               <Button className="bg-white text-brand-900 shadow-lg hover:bg-brand-50 font-bold px-6 py-3 text-base">
-                🏡 {tr('browseProperties')}
+                <span className="inline-flex items-center gap-2"><Home size={18} strokeWidth={1.75} />{tr('browseProperties')}</span>
               </Button>
             </Link>
             <Link to="/gis">
               <Button variant="secondary" className="border-emerald-300/40 bg-emerald-500/20 text-white backdrop-blur hover:bg-emerald-500/30 font-bold px-6 py-3 text-base">
-                🗺️ {tr('gisNav')}
+                <span className="inline-flex items-center gap-2"><Map size={18} strokeWidth={1.75} />{tr('gisNav')}</span>
               </Button>
             </Link>
             <Link to="/market">
               <Button variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 px-5 py-3 text-base">
-                🛍️ {tr('market')}
+                <span className="inline-flex items-center gap-2"><ShoppingBag size={18} strokeWidth={1.75} />{tr('market')}</span>
               </Button>
             </Link>
             <Link to="/jobs">
               <Button variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 px-5 py-3 text-base">
-                💼 {tr('jobs')}
+                <span className="inline-flex items-center gap-2"><BriefcaseBusiness size={18} strokeWidth={1.75} />{tr('jobs')}</span>
               </Button>
             </Link>
           </div>
@@ -64,12 +65,12 @@ export function HomePage() {
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link to="/gis">
                 <Button className="font-bold">
-                  🚀 {tr('requestSurveyNow')} →
+                  <span className="inline-flex items-center gap-2"><Send size={16} strokeWidth={1.75} />{tr('requestSurveyNow')} →</span>
                 </Button>
               </Link>
               <Link to="/gis#interactive-map">
                 <Button variant="secondary">
-                  🗺️ {tr('interactiveMap')}
+                  <span className="inline-flex items-center gap-2"><Map size={16} strokeWidth={1.75} />{tr('interactiveMap')}</span>
                 </Button>
               </Link>
             </div>
@@ -100,8 +101,8 @@ export function HomePage() {
       <section>
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Explore Duhuza Ecosystem</h2>
-            <p className="text-sm text-gray-500">Fast, secure and verified listings across Rwanda</p>
+            <h2 className="text-2xl font-bold text-gray-900">{tr('exploreEcosystem')}</h2>
+            <p className="text-sm text-gray-500">{tr('fastSecureVerified')}</p>
           </div>
         </div>
 
@@ -117,7 +118,7 @@ export function HomePage() {
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <span className="absolute bottom-3 left-3 text-lg font-bold text-white">🏡 {tr('listings')}</span>
+              <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 text-lg font-bold text-white"><Home size={20} strokeWidth={1.75} />{tr('listings')}</span>
             </div>
             <div className="p-4">
               <p className="text-sm text-gray-600">{tr('browseProperties')}</p>
@@ -138,7 +139,7 @@ export function HomePage() {
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/70 to-transparent" />
-              <span className="absolute bottom-3 left-3 text-lg font-bold text-white">🗺️ {tr('gisNav')}</span>
+              <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 text-lg font-bold text-white"><Map size={20} strokeWidth={1.75} />{tr('gisNav')}</span>
             </div>
             <div className="p-4">
               <p className="text-sm text-gray-600">Land surveys, UPI demarcation & contour mapping</p>
@@ -159,7 +160,7 @@ export function HomePage() {
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <span className="absolute bottom-3 left-3 text-lg font-bold text-white">🛍️ {tr('market')}</span>
+              <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 text-lg font-bold text-white"><ShoppingBag size={20} strokeWidth={1.75} />{tr('market')}</span>
             </div>
             <div className="p-4">
               <p className="text-sm text-gray-600">{tr('createMarketItem')}</p>
@@ -180,7 +181,7 @@ export function HomePage() {
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <span className="absolute bottom-3 left-3 text-lg font-bold text-white">🛠️ {tr('services')}</span>
+              <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 text-lg font-bold text-white"><Wrench size={20} strokeWidth={1.75} />{tr('services')}</span>
             </div>
             <div className="p-4">
               <p className="text-sm text-gray-600">{tr('registerAsProvider')}</p>

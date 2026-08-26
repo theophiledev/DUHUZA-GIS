@@ -5,6 +5,7 @@ import { formatPrice } from './ui';
 import { PinIcon } from './FilterBar';
 import { isFavorite, toggleFavorite } from '../utils/favorites';
 import { SmartImage } from './SmartImage';
+import { Heart } from 'lucide-react';
 
 function FavoriteButton({ id }: { id: string }) {
   const [fav, setFav] = useState(() => isFavorite('market', id));
@@ -20,7 +21,7 @@ function FavoriteButton({ id }: { id: string }) {
       }}
       className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg shadow-md backdrop-blur transition hover:scale-110"
     >
-      {fav ? '❤️' : '🤍'}
+      <Heart size={18} strokeWidth={1.75} fill={fav ? 'currentColor' : 'none'} />
     </button>
   );
 }

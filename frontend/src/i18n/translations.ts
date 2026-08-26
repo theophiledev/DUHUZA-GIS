@@ -210,7 +210,35 @@ export type TranslationKey =
   | 'applicationsSubmitted'
   | 'jobApplicationsTitle'
   | 'surveyProgress'
-  | 'rejectionCommentLabel';
+  | 'rejectionCommentLabel'
+  | 'back'
+  | 'collapse'
+  | 'expand'
+  | 'noPreview'
+  | 'posted'
+  | 'closes'
+  | 'viewOpportunity'
+  | 'openOpportunities'
+  | 'duhuzaOpportunities'
+  | 'findNextRole'
+  | 'searchByLocation'
+  | 'liveSource'
+  | 'mifotraVacancies'
+  | 'allOpportunities'
+  | 'technology'
+  | 'landAndGis'
+  | 'operations'
+  | 'marketing'
+  | 'internships'
+  | 'verifiedEmployer'
+  | 'aboutOpportunity'
+  | 'readyToApply'
+  | 'submitApplication'
+  | 'applyBy'
+  | 'exploreEcosystem'
+  | 'fastSecureVerified'
+  | 'manageAccounts'
+  | 'searchUsers';
 
 type Translations = Record<TranslationKey, string>;
 
@@ -423,6 +451,34 @@ const rw: Translations = {
   jobApplicationsTitle: "Ubusabe bw'akazi",
   surveyProgress: 'Aho gupima bigeze',
   rejectionCommentLabel: "Ubutumwa bw'umugenzuzi",
+  back: 'Subira',
+  collapse: 'Gukuba',
+  expand: 'Kwagura',
+  noPreview: 'Nta shusho ihari',
+  posted: 'Byashyizweho',
+  closes: 'Birangira',
+  viewOpportunity: 'Reba amahirwe',
+  openOpportunities: 'Amahirwe afunguye',
+  duhuzaOpportunities: 'Amahirwe ya Duhuza',
+  findNextRole: 'Shaka akazi kawe gakurikira ku bakoresha bizewe mu Rwanda.',
+  searchByLocation: 'Shakisha akarere cyangwa aho biherereye',
+  liveSource: 'Inkomoko iri ku murongo',
+  mifotraVacancies: 'Reba imyanya ya MIFOTRA',
+  allOpportunities: 'Amahirwe yose',
+  technology: 'Ikoranabuhanga',
+  landAndGis: 'Ubutaka na GIS',
+  operations: 'Imikorere',
+  marketing: 'Kwamamaza',
+  internships: 'Imyitozo y’akazi',
+  verifiedEmployer: 'Umukoresha wemejwe wa Duhuza',
+  aboutOpportunity: 'Ibyerekeye aya mahirwe',
+  readyToApply: 'Witeguye gusaba?',
+  submitApplication: 'Ohereza ubusabe bwawe kugira ngo busuzumwe n’umukoresha.',
+  applyBy: 'Saba mbere ya',
+  exploreEcosystem: 'Shakisha serivisi za Duhuza',
+  fastSecureVerified: 'Byihuse, bifite umutekano kandi byemejwe mu Rwanda',
+  manageAccounts: 'Genzura konti, imiterere n’uburenganzira bwihariye',
+  searchUsers: 'Shakisha ukoresheje amazina, imeyili cyangwa telefone...',
 };
 
 const en: Translations = {
@@ -634,6 +690,34 @@ const en: Translations = {
   jobApplicationsTitle: 'Job Applications',
   surveyProgress: 'Survey Progress',
   rejectionCommentLabel: 'Manager Review Note',
+  back: 'Back',
+  collapse: 'Collapse',
+  expand: 'Expand',
+  noPreview: 'No preview available',
+  posted: 'Posted',
+  closes: 'Closes',
+  viewOpportunity: 'View opportunity',
+  openOpportunities: 'open opportunities',
+  duhuzaOpportunities: 'Duhuza opportunities',
+  findNextRole: 'Find your next role with trusted employers across Rwanda.',
+  searchByLocation: 'Search by district or location',
+  liveSource: 'Live source',
+  mifotraVacancies: 'View MIFOTRA vacancies',
+  allOpportunities: 'All opportunities',
+  technology: 'Technology',
+  landAndGis: 'Land and GIS',
+  operations: 'Operations',
+  marketing: 'Marketing',
+  internships: 'Internships',
+  verifiedEmployer: 'Verified Duhuza employer',
+  aboutOpportunity: 'About this opportunity',
+  readyToApply: 'Ready to apply?',
+  submitApplication: 'Submit your application for review by the employer.',
+  applyBy: 'Apply by',
+  exploreEcosystem: 'Explore Duhuza ecosystem',
+  fastSecureVerified: 'Fast, secure and verified listings across Rwanda',
+  manageAccounts: 'Manage accounts, status, and granular permissions',
+  searchUsers: 'Search by name, email, or phone...',
 };
 
 const sw: Translations = {
@@ -845,6 +929,34 @@ const sw: Translations = {
   jobApplicationsTitle: 'Maombi ya Kazi',
   surveyProgress: 'Maendeleo ya Upimaji',
   rejectionCommentLabel: 'Ujumbe wa Mhakiki',
+  back: 'Rudi',
+  collapse: 'Kunja',
+  expand: 'Panua',
+  noPreview: 'Hakuna hakikisho',
+  posted: 'Iliwekwa',
+  closes: 'Inafungwa',
+  viewOpportunity: 'Tazama nafasi',
+  openOpportunities: 'nafasi zilizo wazi',
+  duhuzaOpportunities: 'Nafasi za Duhuza',
+  findNextRole: 'Pata kazi yako inayofuata kwa waajiri wanaoaminika kote Rwanda.',
+  searchByLocation: 'Tafuta kwa wilaya au mahali',
+  liveSource: 'Chanzo cha moja kwa moja',
+  mifotraVacancies: 'Tazama nafasi za MIFOTRA',
+  allOpportunities: 'Nafasi zote',
+  technology: 'Teknolojia',
+  landAndGis: 'Ardhi na GIS',
+  operations: 'Uendeshaji',
+  marketing: 'Masoko',
+  internships: 'Mafunzo ya kazi',
+  verifiedEmployer: 'Mwajiri wa Duhuza aliyethibitishwa',
+  aboutOpportunity: 'Kuhusu nafasi hii',
+  readyToApply: 'Uko tayari kutuma ombi?',
+  submitApplication: 'Tuma ombi lako likaguliwe na mwajiri.',
+  applyBy: 'Tuma kabla ya',
+  exploreEcosystem: 'Chunguza mfumo wa Duhuza',
+  fastSecureVerified: 'Orodha za haraka, salama na zilizothibitishwa kote Rwanda',
+  manageAccounts: 'Simamia akaunti, hali na ruhusa maalum',
+  searchUsers: 'Tafuta kwa jina, barua pepe au simu...',
 };
 
 export const translations: Record<LanguageCode, Translations> = { RW: rw, EN: en, SW: sw };

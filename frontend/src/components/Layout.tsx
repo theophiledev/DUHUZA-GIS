@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { languageLabels } from '../i18n/translations';
 import type { LanguageCode } from '../types';
 import { ToastContainer } from './Toast';
+import { Map } from 'lucide-react';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-3.5 py-2 text-sm transition shrink-0 ${
@@ -34,7 +35,7 @@ export function Layout() {
           <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
             <NavLink to="/" end className={navLinkClass}>{tr('home')}</NavLink>
             <NavLink to="/listings" className={navLinkClass}>{tr('listings')}</NavLink>
-            <NavLink to="/gis" className={navLinkClass}>🗺️ {tr('gisNav')}</NavLink>
+            <NavLink to="/gis" className={`${navLinkClass} inline-flex items-center gap-2`}><Map size={18} strokeWidth={1.75} />{tr('gisNav')}</NavLink>
             <NavLink to="/market" className={navLinkClass}>{tr('market')}</NavLink>
             <NavLink to="/services" className={navLinkClass}>{tr('services')}</NavLink>
             <NavLink to="/jobs" className={navLinkClass}>{tr('jobs')}</NavLink>
@@ -83,7 +84,7 @@ export function Layout() {
         <nav className="flex gap-1 overflow-x-auto border-t border-gray-100 px-4 py-2 md:hidden">
           <NavLink to="/" end className={navLinkClass}>{tr('home')}</NavLink>
           <NavLink to="/listings" className={navLinkClass}>{tr('listings')}</NavLink>
-          <NavLink to="/gis" className={navLinkClass}>🗺️ {tr('gisNav')}</NavLink>
+          <NavLink to="/gis" className={`${navLinkClass} inline-flex items-center gap-2`}><Map size={18} strokeWidth={1.75} />{tr('gisNav')}</NavLink>
           <NavLink to="/market" className={navLinkClass}>{tr('market')}</NavLink>
           <NavLink to="/services" className={navLinkClass}>{tr('services')}</NavLink>
           <NavLink to="/jobs" className={navLinkClass}>{tr('jobs')}</NavLink>

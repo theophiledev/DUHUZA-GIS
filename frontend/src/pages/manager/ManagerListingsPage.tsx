@@ -1,7 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { approveListing, pendingListings, rejectListing } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { Button, Card, EmptyState, ErrorAlert, formatPrice, StatusBadge } from '../../components/ui';
+import {
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  ErrorAlert,
+  formatPrice,
+  StatusBadge,
+} from '../../components/ui';
 import { SmartImage } from '../../components/SmartImage';
 import { ImageLightbox } from '../../components/ImageLightbox';
 import { Pagination } from '../../components/Pagination';
@@ -9,14 +17,18 @@ import { TableSkeleton } from '../../components/SkeletonLoaders';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { InternalListing } from '../../types';
+import { Lock, Search, MapPin } from 'lucide-react';
 
 export function ManagerListingsPage() {
   const { tr } = useLanguage();
   const [items, setItems] = useState<InternalListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [rejectId, setRejectId] = useState<string | null>(null);
-  const [rejectComment, setRejectComment] = useState('');
+  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; id: string; title: string }>({
+    open: false,
+    id: '',
+    title: '',
+  });
   const [actionLoading, setActionLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
@@ -55,14 +67,13 @@ export function ManagerListingsPage() {
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectId || !rejectComment.trim()) return;
+  const handleRejectConfirm = async (comment?: string) => {
+    if (!rejectDialog.id || !comment) return;
     setActionLoading(true);
     try {
-      await rejectListing(rejectId, rejectComment);
+      await rejectListing(rejectDialog.id, comment);
       showToast('Listing rejected and feedback logged for agent.', 'info');
-      setRejectId(null);
-      setRejectComment('');
+      setRejectDialog({ open: false, id: '', title: '' });
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -92,7 +103,7 @@ export function ManagerListingsPage() {
       {loading && <TableSkeleton rows={4} cols={4} />}
 
       {!loading && !error && items.length === 0 && (
-        <EmptyState message="No property listings pending review. The queue is up to date." />
+        <EmptyState message="Nothing pending — you're caught up." />
       )}
 
       {!loading && items.length > 0 && (
@@ -103,7 +114,11 @@ export function ManagerListingsPage() {
             const photos = l.media || [];
 
             return (
-              <Card key={l.id} className="overflow-hidden p-0 border border-gray-200 shadow-sm hover:shadow-md transition">
+              <Card
+                key={l.id}
+                statusRail="pending"
+                className="overflow-hidden p-0 border-[#E2E8E6] shadow-sm hover:shadow-md transition"
+              >
                 <div className="flex flex-col md:flex-row">
                   {/* Media Preview Column */}
                   {photos.length > 0 && (
@@ -118,8 +133,8 @@ export function ManagerListingsPage() {
                         className="h-48 md:h-full w-full object-cover group-hover:scale-105 transition duration-300"
                         containerClassName="h-48 md:h-full w-full"
                       />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
-                        🔍 View Gallery ({photos.length})
+                      <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-xs">
+                        <span className="inline-flex items-center gap-1"><Search size={14} strokeWidth={1.75} />View Gallery ({photos.length})</span>
                       </div>
                     </div>
                   )}
@@ -129,19 +144,19 @@ export function ManagerListingsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded bg-brand-100 text-brand-800 px-2 py-0.5 text-xs font-bold uppercase">
+                          <span className="rounded-md bg-teal-50 text-[#0F766E] px-2 py-0.5 text-xs font-bold uppercase tracking-wider">
                             {l.category} · {l.listingType}
                           </span>
                           <StatusBadge status={l.status} />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mt-1">{title}</h3>
+                        <h3 className="font-heading text-lg font-bold text-gray-900 mt-1">{title}</h3>
                         <p className="text-xs text-gray-500">
-                          📍 {l.district || 'Rwanda'} · {l.sector || ''} · {l.cell || ''} · {l.village || ''}
+                            <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />{l.district || 'Rwanda'} · {l.sector || ''} · {l.cell || ''} · {l.village || ''}</span>
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-xl font-extrabold text-brand-700">
+                        <div className="font-heading text-xl font-extrabold text-[#0F766E]">
                           {formatPrice(l.price, l.currency)}
                         </div>
                       </div>
@@ -152,11 +167,15 @@ export function ManagerListingsPage() {
                     {/* Private Owner & Agent Info */}
                     <div className="grid gap-3 sm:grid-cols-2 rounded-xl bg-amber-50/70 border border-amber-200/60 p-3 text-xs text-amber-950">
                       <div>
-                        <span className="font-bold">🔒 Private Owner:</span> {l.ownerName || '—'}
-                        <div>Owner Phone: <span className="font-mono">{l.ownerPhone || '—'}</span></div>
+                        <span className="font-bold flex items-center gap-1">
+                          <Lock className="h-3.5 w-3.5 text-amber-800" />
+                          <span>Confidential Owner:</span>
+                          <span className="font-semibold">{l.ownerName || '—'}</span>
+                        </span>
+                        <div>Owner Phone: <span className="font-mono-data font-semibold">{l.ownerPhone || '—'}</span></div>
                       </div>
                       <div>
-                        <span className="font-bold">Agent:</span> <span className="font-mono">{l.agentId.slice(0, 8)}...</span>
+                        <span className="font-bold">Agent ID:</span> <span className="font-mono-data">{l.agentId.slice(0, 8)}...</span>
                         {l.internalNotes && <div>Internal Note: <em>{l.internalNotes}</em></div>}
                       </div>
                     </div>
@@ -165,18 +184,15 @@ export function ManagerListingsPage() {
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
                       <Button
                         variant="secondary"
-                        className="text-xs text-red-600 hover:bg-red-50 border-red-200"
-                        onClick={() => {
-                          setRejectId(l.id);
-                          setRejectComment('');
-                        }}
+                        className="text-xs text-red-700 hover:bg-red-50 border-red-200"
+                        onClick={() => setRejectDialog({ open: true, id: l.id, title })}
                         disabled={actionLoading}
                       >
                         {tr('reject')}
                       </Button>
                       <Button
                         variant="primary"
-                        className="text-xs shadow-sm"
+                        className="text-xs font-bold"
                         onClick={() => handleApprove(l.id)}
                         disabled={actionLoading}
                       >
@@ -205,34 +221,22 @@ export function ManagerListingsPage() {
         </div>
       )}
 
-      {/* Reject Modal */}
-      {rejectId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Provide Rejection Feedback</h3>
-            <textarea
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              placeholder="Explain why this listing is rejected so the agent can fix and resubmit..."
-              rows={4}
-              className="w-full rounded-xl border border-gray-300 p-3 text-sm focus:border-red-500 focus:outline-none"
-              required
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setRejectId(null)}>
-                {tr('cancel')}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleReject}
-                disabled={actionLoading || rejectComment.trim().length < 3}
-              >
-                Confirm Rejection
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Reject Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={rejectDialog.open}
+        title={`Reject Property Listing: ${rejectDialog.title}`}
+        message="Provide clear feedback on why this listing was not approved so the agent can update and resubmit."
+        confirmLabel="Confirm Rejection"
+        cancelLabel={tr('cancel')}
+        variant="danger"
+        requireComment={true}
+        commentLabel="Mandatory Rejection Feedback:"
+        commentPlaceholder="Explain required corrections (e.g. invalid pricing, unclear photos, wrong location)..."
+        minCommentLength={3}
+        isLoading={actionLoading}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setRejectDialog({ open: false, id: '', title: '' })}
+      />
 
       {/* Lightbox Gallery */}
       <ImageLightbox

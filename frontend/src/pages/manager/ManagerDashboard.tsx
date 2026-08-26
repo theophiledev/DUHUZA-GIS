@@ -21,14 +21,24 @@ import { DashboardLayout } from '../../components/DashboardLayout';
 import {
   Button,
   Card,
+  ConfirmDialog,
   EmptyState,
   ErrorAlert,
-  formatPrice,
   LoadingSpinner,
+  ReviewCard,
   StatusBadge,
 } from '../../components/ui';
+import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { AdminUser, GisRequest, InternalListing, Job, MarketItem, ServiceProvider } from '../../types';
+import {
+  Home,
+  MapPin,
+  ShoppingBag,
+  Wrench,
+  Briefcase,
+  ExternalLink,
+} from 'lucide-react';
 
 type VerticalTab = 'listings' | 'gis' | 'market' | 'services' | 'jobs';
 
@@ -42,19 +52,20 @@ export function ManagerDashboard() {
   const [listings, setListings] = useState<InternalListing[]>([]);
   const [gisRequests, setGisRequests] = useState<GisRequest[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
-  const [serviceProviders, setServiceProviders] = useState<(ServiceProvider & { user: { id: string; name: string; phone?: string } })[]>([]);
+  const [serviceProviders, setServiceProviders] = useState<
+    (ServiceProvider & { user: { id: string; name: string; phone?: string } })[]
+  >([]);
   const [jobs, setJobs] = useState<(Job & { employer: { id: string; name: string; phone?: string } })[]>([]);
   const [agents, setAgents] = useState<AdminUser[]>([]);
 
   // Action states
   const [selectedAgentForGis, setSelectedAgentForGis] = useState<Record<string, string>>({});
-  const [rejectModal, setRejectModal] = useState<{
+  const [rejectDialog, setRejectDialog] = useState<{
     open: boolean;
     type: VerticalTab;
     id: string;
     title: string;
   }>({ open: false, type: 'listings', id: '', title: '' });
-  const [rejectComment, setRejectComment] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadAll = async () => {
@@ -95,6 +106,7 @@ export function ManagerDashboard() {
     setActionLoading(true);
     try {
       await approveListing(id);
+      showToast('Property listing approved and published!', 'success');
       loadAll();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -107,6 +119,7 @@ export function ManagerDashboard() {
     setActionLoading(true);
     try {
       await approveMarket(id);
+      showToast('Isoko marketplace item approved!', 'success');
       loadAll();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -119,6 +132,7 @@ export function ManagerDashboard() {
     setActionLoading(true);
     try {
       await approveService(id);
+      showToast('Service provider profile verified and approved!', 'success');
       loadAll();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -131,6 +145,7 @@ export function ManagerDashboard() {
     setActionLoading(true);
     try {
       await approveJob(id);
+      showToast('Job opening approved and published!', 'success');
       loadAll();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -148,6 +163,7 @@ export function ManagerDashboard() {
     setActionLoading(true);
     try {
       await assignGis(gisId, agentId);
+      showToast('GIS cadastral mission assigned to surveyor!', 'success');
       loadAll();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -158,24 +174,21 @@ export function ManagerDashboard() {
 
   // Rejection Dialog Handler
   const openRejectDialog = (type: VerticalTab, id: string, title: string) => {
-    setRejectModal({ open: true, type, id, title });
-    setRejectComment('');
+    setRejectDialog({ open: true, type, id, title });
   };
 
-  const handleConfirmReject = async () => {
-    if (!rejectComment.trim() || rejectComment.trim().length < 3) {
-      alert('A specific reason for rejection is required (minimum 3 characters).');
-      return;
-    }
+  const handleConfirmReject = async (comment?: string) => {
+    if (!comment || comment.trim().length < 3) return;
 
     setActionLoading(true);
     try {
-      if (rejectModal.type === 'listings') await rejectListing(rejectModal.id, rejectComment);
-      else if (rejectModal.type === 'market') await rejectMarket(rejectModal.id, rejectComment);
-      else if (rejectModal.type === 'services') await rejectService(rejectModal.id, rejectComment);
-      else if (rejectModal.type === 'jobs') await rejectJob(rejectModal.id, rejectComment);
+      if (rejectDialog.type === 'listings') await rejectListing(rejectDialog.id, comment);
+      else if (rejectDialog.type === 'market') await rejectMarket(rejectDialog.id, comment);
+      else if (rejectDialog.type === 'services') await rejectService(rejectDialog.id, comment);
+      else if (rejectDialog.type === 'jobs') await rejectJob(rejectDialog.id, comment);
 
-      setRejectModal({ open: false, type: 'listings', id: '', title: '' });
+      showToast('Submission rejected and feedback saved for submitter.', 'info');
+      setRejectDialog({ open: false, type: 'listings', id: '', title: '' });
       loadAll();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -208,17 +221,20 @@ export function ManagerDashboard() {
           <Card
             className={`h-full border-t-4 p-4 ${
               activeTab === 'listings'
-                ? 'border-t-brand-600 bg-brand-50/40 shadow-md ring-2 ring-brand-500/20'
-                : 'border-t-gray-300 bg-white hover:shadow-sm'
+                ? 'border-t-[#0F766E] bg-teal-50/30 shadow-md ring-2 ring-[#0F766E]/20'
+                : 'border-t-gray-300 bg-white hover:shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500">🏠 {tr('listings')}</span>
-              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-800">
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                <Home className="h-3.5 w-3.5 text-[#0F766E]" />
+                {tr('listings')}
+              </span>
+              <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-bold text-[#0F766E]">
                 {listings.length}
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-gray-900">{listings.length}</div>
+            <div className="mt-2 font-heading text-2xl font-extrabold text-gray-900">{listings.length}</div>
             <p className="text-[11px] text-gray-500 mt-1">{tr('pendingReview')}</p>
           </Card>
         </button>
@@ -231,17 +247,20 @@ export function ManagerDashboard() {
           <Card
             className={`h-full border-t-4 p-4 ${
               activeTab === 'gis'
-                ? 'border-t-emerald-600 bg-emerald-50/40 shadow-md ring-2 ring-emerald-500/20'
-                : 'border-t-gray-300 bg-white hover:shadow-sm'
+                ? 'border-t-emerald-600 bg-emerald-50/30 shadow-md ring-2 ring-emerald-500/20'
+                : 'border-t-gray-300 bg-white hover:shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500">🗺️ {tr('gisRequest')}</span>
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                {tr('gisRequest')}
+              </span>
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                 {gisRequests.length}
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-emerald-800">{gisRequests.length}</div>
+            <div className="mt-2 font-heading text-2xl font-extrabold text-emerald-800">{gisRequests.length}</div>
             <p className="text-[11px] text-gray-500 mt-1">Pending dispatch</p>
           </Card>
         </button>
@@ -254,17 +273,20 @@ export function ManagerDashboard() {
           <Card
             className={`h-full border-t-4 p-4 ${
               activeTab === 'market'
-                ? 'border-t-amber-600 bg-amber-50/40 shadow-md ring-2 ring-amber-500/20'
-                : 'border-t-gray-300 bg-white hover:shadow-sm'
+                ? 'border-t-amber-600 bg-amber-50/30 shadow-md ring-2 ring-amber-500/20'
+                : 'border-t-gray-300 bg-white hover:shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500">🛒 {tr('market')}</span>
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                <ShoppingBag className="h-3.5 w-3.5 text-amber-600" />
+                {tr('market')}
+              </span>
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
                 {marketItems.length}
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-amber-800">{marketItems.length}</div>
+            <div className="mt-2 font-heading text-2xl font-extrabold text-amber-800">{marketItems.length}</div>
             <p className="text-[11px] text-gray-500 mt-1">Isoko submissions</p>
           </Card>
         </button>
@@ -277,17 +299,20 @@ export function ManagerDashboard() {
           <Card
             className={`h-full border-t-4 p-4 ${
               activeTab === 'services'
-                ? 'border-t-purple-600 bg-purple-50/40 shadow-md ring-2 ring-purple-500/20'
-                : 'border-t-gray-300 bg-white hover:shadow-sm'
+                ? 'border-t-purple-600 bg-purple-50/30 shadow-md ring-2 ring-purple-500/20'
+                : 'border-t-gray-300 bg-white hover:shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500">🛠️ {tr('services')}</span>
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                <Wrench className="h-3.5 w-3.5 text-purple-600" />
+                {tr('services')}
+              </span>
               <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-800">
                 {serviceProviders.length}
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-purple-800">{serviceProviders.length}</div>
+            <div className="mt-2 font-heading text-2xl font-extrabold text-purple-800">{serviceProviders.length}</div>
             <p className="text-[11px] text-gray-500 mt-1">Provider profiles</p>
           </Card>
         </button>
@@ -300,41 +325,43 @@ export function ManagerDashboard() {
           <Card
             className={`h-full border-t-4 p-4 ${
               activeTab === 'jobs'
-                ? 'border-t-indigo-600 bg-indigo-50/40 shadow-md ring-2 ring-indigo-500/20'
-                : 'border-t-gray-300 bg-white hover:shadow-sm'
+                ? 'border-t-blue-600 bg-blue-50/30 shadow-md ring-2 ring-blue-500/20'
+                : 'border-t-gray-300 bg-white hover:shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500">💼 {tr('jobs')}</span>
-              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-800">
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                <Briefcase className="h-3.5 w-3.5 text-blue-600" />
+                {tr('jobs')}
+              </span>
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-800">
                 {jobs.length}
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-indigo-800">{jobs.length}</div>
+            <div className="mt-2 font-heading text-2xl font-extrabold text-blue-800">{jobs.length}</div>
             <p className="text-[11px] text-gray-500 mt-1">Job vacancies</p>
           </Card>
         </button>
       </div>
 
       {/* Moderation Stream Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+      <div className="flex items-center justify-between border-b border-[#E2E8E6] pb-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold text-gray-900 capitalize">
-            {activeTab === 'listings' && `🏠 Property Listings Queue (${listings.length})`}
-            {activeTab === 'gis' && `🗺️ GIS Survey Dispatch Queue (${gisRequests.length})`}
-            {activeTab === 'market' && `🛒 Isoko Market Queue (${marketItems.length})`}
-            {activeTab === 'services' && `🛠️ Service Providers Queue (${serviceProviders.length})`}
-            {activeTab === 'jobs' && `💼 Job Postings Queue (${jobs.length})`}
+          <h2 className="font-heading text-lg font-bold text-gray-900">
+            {activeTab === 'listings' && `Property Listings Queue (${listings.length})`}
+            {activeTab === 'gis' && `GIS Survey Dispatch Queue (${gisRequests.length})`}
+            {activeTab === 'market' && `Isoko Market Queue (${marketItems.length})`}
+            {activeTab === 'services' && `Service Providers Queue (${serviceProviders.length})`}
+            {activeTab === 'jobs' && `Job Postings Queue (${jobs.length})`}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to={`/dashboard/manager/${activeTab}`}
-            className="text-xs font-bold text-brand-700 hover:underline"
-          >
-            Open Dedicated Page →
-          </Link>
-        </div>
+        <Link
+          to={`/dashboard/manager/${activeTab}`}
+          className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1"
+        >
+          <span>Open Dedicated Page</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
       {loading ? (
@@ -345,65 +372,34 @@ export function ManagerDashboard() {
           {activeTab === 'listings' && (
             <>
               {listings.length === 0 ? (
-                <EmptyState message="All property listings are reviewed! The queue is clear." />
+                <EmptyState message="Nothing pending — you're caught up." />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {listings.map((l) => {
                     const title = l.translations?.[0]?.title || `Listing #${l.id.slice(0, 8)}`;
+                    const desc = l.translations?.[0]?.description || '';
+                    const photo = l.media?.[0]?.url;
 
                     return (
-                      <Card key={l.id} className="overflow-hidden p-0 border border-gray-200 hover:shadow-md transition">
-                        <div className="p-4 sm:p-5 space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <span className="rounded bg-brand-50 text-brand-700 text-[11px] font-bold px-2 py-0.5 uppercase tracking-wide">
-                                {l.category} · {l.listingType}
-                              </span>
-                              <h3 className="font-bold text-gray-900 text-base mt-1 line-clamp-1">{title}</h3>
-                              <p className="text-xs text-gray-500">
-                                📍 {l.district || 'Rwanda'}, {l.sector || ''} {l.cell || ''}
-                              </p>
-                            </div>
-                            <span className="text-base font-extrabold text-brand-700 whitespace-nowrap">
-                              {formatPrice(l.price, l.currency)}
-                            </span>
-                          </div>
-
-                          {/* Private Owner Data (Visible to Manager/Admin only) */}
-                          <div className="rounded-lg bg-amber-50/80 border border-amber-200/70 p-2.5 text-xs text-amber-900 space-y-0.5">
-                            <div className="font-bold text-amber-950 flex items-center gap-1">
-                              <span>🔒 Private Owner Info:</span>
-                              <span className="font-medium">{l.ownerName || '—'}</span>
-                            </div>
-                            <div>Phone: <span className="font-mono">{l.ownerPhone || '—'}</span></div>
-                            {l.internalNotes && <div>Notes: <em>{l.internalNotes}</em></div>}
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <div className="text-xs text-gray-400">
-                              Agent ID: <span className="font-mono">{l.agentId.slice(0, 8)}...</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="secondary"
-                                className="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 border-red-200"
-                                onClick={() => openRejectDialog('listings', l.id, title)}
-                                disabled={actionLoading}
-                              >
-                                {tr('reject')}
-                              </Button>
-                              <Button
-                                variant="primary"
-                                className="text-xs px-4 py-1.5 shadow-sm"
-                                onClick={() => handleApproveListing(l.id)}
-                                disabled={actionLoading}
-                              >
-                                ✓ {tr('approve')}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
+                      <ReviewCard
+                        key={l.id}
+                        id={l.id}
+                        title={title}
+                        status={l.status}
+                        category={`${l.category} · ${l.listingType}`}
+                        location={`${l.district || 'Rwanda'}, ${l.sector || ''} ${l.cell || ''}`}
+                        price={l.price}
+                        currency={l.currency}
+                        description={desc}
+                        imageUrl={photo}
+                        ownerName={l.ownerName}
+                        ownerPhone={l.ownerPhone}
+                        internalNotes={l.internalNotes}
+                        submitterInfo={`Agent: ${l.agentId.slice(0, 8)}...`}
+                        onApprove={() => handleApproveListing(l.id)}
+                        onReject={() => openRejectDialog('listings', l.id, title)}
+                        actionLoading={actionLoading}
+                      />
                     );
                   })}
                 </div>
@@ -415,39 +411,41 @@ export function ManagerDashboard() {
           {activeTab === 'gis' && (
             <>
               {gisRequests.length === 0 ? (
-                <EmptyState message="No pending GIS survey missions to dispatch." />
+                <EmptyState message="Nothing pending — you're caught up." />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {gisRequests.map((r) => (
-                    <Card key={r.id} className="p-5 border border-gray-200 hover:shadow-md transition space-y-4">
+                    <Card key={r.id} statusRail="pending" className="p-5 space-y-4">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
                             <StatusBadge status={r.status} />
-                            <span className="text-xs font-mono text-gray-400">ID: {r.id.slice(0, 8)}</span>
+                            <span className="text-xs font-mono-data text-gray-400">ID: {r.id.slice(0, 8)}</span>
                           </div>
-                          <h3 className="font-bold text-gray-900 mt-1.5 text-base">{r.purpose}</h3>
+                          <h3 className="font-heading font-bold text-gray-900 mt-1.5 text-base">{r.purpose}</h3>
                           <p className="text-xs text-gray-500 mt-0.5">
                             Client: <span className="font-semibold text-gray-800">{r.client?.name}</span> ({r.client?.phone || '—'})
                           </p>
                         </div>
                         <div className="text-right">
-                          <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-mono font-bold text-emerald-800">
-                            📍 {r.parcelLat}, {r.parcelLng}
+                          <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-mono-data font-bold text-emerald-800">
+                            <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />{r.parcelLat}, {r.parcelLng}</span>
                           </span>
                         </div>
                       </div>
 
                       {/* Surveyor Assignment Box */}
-                      <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3 space-y-2">
-                        <div className="text-xs font-bold text-gray-700">Dispatch Certified Surveyor (Agent)</div>
+                      <div className="rounded-xl border border-[#E2E8E6] bg-gray-50/70 p-3.5 space-y-2.5">
+                        <div className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          Dispatch Certified Surveyor (Agent)
+                        </div>
                         <div className="flex gap-2">
                           <select
                             value={selectedAgentForGis[r.id] || r.assignedAgentId || ''}
                             onChange={(e) =>
                               setSelectedAgentForGis({ ...selectedAgentForGis, [r.id]: e.target.value })
                             }
-                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 focus:border-[#0F766E] focus:outline-none"
                           >
                             <option value="">-- Select Active Surveyor / Agent --</option>
                             {agents.map((ag) => (
@@ -458,7 +456,7 @@ export function ManagerDashboard() {
                           </select>
                           <Button
                             variant="primary"
-                            className="text-xs whitespace-nowrap px-3 py-1.5"
+                            className="text-xs whitespace-nowrap px-3 py-1.5 font-bold"
                             onClick={() => handleAssignGis(r.id)}
                             disabled={actionLoading}
                           >
@@ -466,8 +464,8 @@ export function ManagerDashboard() {
                           </Button>
                         </div>
                         {r.assignedAgent && (
-                          <div className="text-[11px] text-emerald-800 font-medium">
-                            Currently assigned to: {r.assignedAgent.name} ({r.assignedAgent.phone || ''})
+                          <div className="text-[11px] text-emerald-800 font-semibold">
+                            ✓ Currently assigned to: {r.assignedAgent.name} ({r.assignedAgent.phone || ''})
                           </div>
                         )}
                       </div>
@@ -482,47 +480,24 @@ export function ManagerDashboard() {
           {activeTab === 'market' && (
             <>
               {marketItems.length === 0 ? (
-                <EmptyState message="All Isoko marketplace submissions are approved." />
+                <EmptyState message="Nothing pending — you're caught up." />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {marketItems.map((item) => (
-                    <Card key={item.id} className="p-5 border border-gray-200 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="rounded bg-amber-100 text-amber-900 text-xs font-bold px-2 py-0.5">
-                            {item.category}
-                          </span>
-                          <h3 className="font-bold text-gray-900 text-base mt-1.5">{item.title}</h3>
-                          <p className="text-xs text-gray-500">
-                            Seller: <span className="font-semibold text-gray-700">{item.seller?.name}</span> ({item.seller?.phone || '—'})
-                          </p>
-                        </div>
-                        <span className="text-base font-extrabold text-amber-800">
-                          {formatPrice(item.price, item.currency)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 line-clamp-2 bg-gray-50 p-2.5 rounded-lg">
-                        {item.description}
-                      </p>
-                      <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                        <Button
-                          variant="secondary"
-                          className="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 border-red-200"
-                          onClick={() => openRejectDialog('market', item.id, item.title)}
-                          disabled={actionLoading}
-                        >
-                          {tr('reject')}
-                        </Button>
-                        <Button
-                          variant="primary"
-                          className="text-xs px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white"
-                          onClick={() => handleApproveMarket(item.id)}
-                          disabled={actionLoading}
-                        >
-                          ✓ {tr('approve')}
-                        </Button>
-                      </div>
-                    </Card>
+                    <ReviewCard
+                      key={item.id}
+                      id={item.id}
+                      title={item.title}
+                      status={item.status}
+                      category={item.category}
+                      price={item.price}
+                      currency={item.currency}
+                      description={item.description}
+                      submitterInfo={`Seller: ${item.seller?.name || '—'} (${item.seller?.phone || '—'})`}
+                      onApprove={() => handleApproveMarket(item.id)}
+                      onReject={() => openRejectDialog('market', item.id, item.title)}
+                      actionLoading={actionLoading}
+                    />
                   ))}
                 </div>
               )}
@@ -533,49 +508,25 @@ export function ManagerDashboard() {
           {activeTab === 'services' && (
             <>
               {serviceProviders.length === 0 ? (
-                <EmptyState message="No pending service provider registration requests." />
+                <EmptyState message="Nothing pending — you're caught up." />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {serviceProviders.map((p) => (
-                    <Card key={p.id} className="p-5 border border-gray-200 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="rounded bg-purple-100 text-purple-900 text-xs font-bold px-2 py-0.5 capitalize">
-                            {p.category}
-                          </span>
-                          <h3 className="font-bold text-gray-900 text-base mt-1.5">{p.user?.name}</h3>
-                          <p className="text-xs text-gray-500">
-                            Phone: {p.user?.phone || '—'} · Coverage: {p.coverageDistrict || 'Rwanda'}
-                          </p>
-                        </div>
-                        {p.rateInfo && (
-                          <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                            {p.rateInfo}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg">
-                        {p.description}
-                      </p>
-                      <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                        <Button
-                          variant="secondary"
-                          className="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 border-red-200"
-                          onClick={() => openRejectDialog('services', p.id, `${p.user?.name} (${p.category})`)}
-                          disabled={actionLoading}
-                        >
-                          {tr('reject')}
-                        </Button>
-                        <Button
-                          variant="primary"
-                          className="text-xs px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white"
-                          onClick={() => handleApproveService(p.id)}
-                          disabled={actionLoading}
-                        >
-                          ✓ Verify & Approve
-                        </Button>
-                      </div>
-                    </Card>
+                    <ReviewCard
+                      key={p.id}
+                      id={p.id}
+                      title={p.user?.name || 'Service Provider'}
+                      status={p.status}
+                      category={p.category}
+                      location={`Coverage: ${p.coverageDistrict || 'Rwanda'}`}
+                      tags={p.rateInfo ? [p.rateInfo] : undefined}
+                      description={p.description}
+                      submitterInfo={`Phone: ${p.user?.phone || '—'}`}
+                      approveLabel="Verify & Approve"
+                      onApprove={() => handleApproveService(p.id)}
+                      onReject={() => openRejectDialog('services', p.id, `${p.user?.name} (${p.category})`)}
+                      actionLoading={actionLoading}
+                    />
                   ))}
                 </div>
               )}
@@ -586,46 +537,23 @@ export function ManagerDashboard() {
           {activeTab === 'jobs' && (
             <>
               {jobs.length === 0 ? (
-                <EmptyState message="No pending job vacancies in queue." />
+                <EmptyState message="Nothing pending — you're caught up." />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {jobs.map((job) => (
-                    <Card key={job.id} className="p-5 border border-gray-200 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-base">{job.title}</h3>
-                          <p className="text-xs text-gray-500">
-                            Employer: <span className="font-semibold">{job.employer?.name}</span> · 📍 {job.location || 'Rwanda'}
-                          </p>
-                        </div>
-                        {job.salaryRange && (
-                          <span className="text-xs font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
-                            {job.salaryRange}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-600 line-clamp-3 bg-gray-50 p-2.5 rounded-lg">
-                        {job.description}
-                      </p>
-                      <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                        <Button
-                          variant="secondary"
-                          className="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 border-red-200"
-                          onClick={() => openRejectDialog('jobs', job.id, job.title)}
-                          disabled={actionLoading}
-                        >
-                          {tr('reject')}
-                        </Button>
-                        <Button
-                          variant="primary"
-                          className="text-xs px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
-                          onClick={() => handleApproveJob(job.id)}
-                          disabled={actionLoading}
-                        >
-                          ✓ {tr('approve')}
-                        </Button>
-                      </div>
-                    </Card>
+                    <ReviewCard
+                      key={job.id}
+                      id={job.id}
+                      title={job.title}
+                      status={job.status}
+                      location={job.location || 'Rwanda'}
+                      tags={job.salaryRange ? [job.salaryRange] : undefined}
+                      description={job.description}
+                      submitterInfo={`Employer: ${job.employer?.name || '—'}`}
+                      onApprove={() => handleApproveJob(job.id)}
+                      onReject={() => openRejectDialog('jobs', job.id, job.title)}
+                      actionLoading={actionLoading}
+                    />
                   ))}
                 </div>
               )}
@@ -635,57 +563,21 @@ export function ManagerDashboard() {
       )}
 
       {/* Mandatory Rejection Reason Dialog Modal */}
-      {rejectModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-bold text-gray-900">
-                Reject Submission: <span className="text-red-600">{rejectModal.title}</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setRejectModal({ open: false, type: 'listings', id: '', title: '' })}
-                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-700">
-                Mandatory Feedback / Rejection Reason (BR6):
-              </label>
-              <textarea
-                value={rejectComment}
-                onChange={(e) => setRejectComment(e.target.value)}
-                placeholder="Explain what the submitter needs to correct (e.g., missing photo, incorrect price, unverified UPI)..."
-                rows={4}
-                className="w-full rounded-xl border border-gray-300 p-3 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
-                required
-              />
-              <p className="text-[11px] text-gray-500">
-                This note will be recorded in the audit log and displayed to the submitter so they can rectify and resubmit.
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
-              <Button
-                variant="secondary"
-                onClick={() => setRejectModal({ open: false, type: 'listings', id: '', title: '' })}
-              >
-                {tr('cancel')}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleConfirmReject}
-                disabled={actionLoading || rejectComment.trim().length < 3}
-              >
-                {actionLoading ? tr('loading') : 'Confirm Rejection'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={rejectDialog.open}
+        title={`Reject Submission: ${rejectDialog.title}`}
+        message="Please provide specific, actionable feedback for the submitter so they can rectify and resubmit."
+        confirmLabel="Confirm Rejection"
+        cancelLabel={tr('cancel')}
+        variant="danger"
+        requireComment={true}
+        commentLabel="Mandatory Reason / Feedback (BR6):"
+        commentPlaceholder="Explain what needs to be fixed (e.g. missing photo, incorrect price, unverified UPI number)..."
+        minCommentLength={3}
+        isLoading={actionLoading}
+        onConfirm={handleConfirmReject}
+        onCancel={() => setRejectDialog({ open: false, type: 'listings', id: '', title: '' })}
+      />
     </DashboardLayout>
   );
 }
