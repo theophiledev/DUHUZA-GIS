@@ -2,12 +2,22 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { listUsers, setUserPermission, setUserStatus } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { Button, Card, EmptyState, ErrorAlert, Input, StatusBadge } from '../../components/ui';
+import {
+  Button,
+  Card,
+  ConfirmDialog,
+  DataTable,
+  EmptyState,
+  ErrorAlert,
+  Input,
+  StatusBadge,
+} from '../../components/ui';
 import { Pagination } from '../../components/Pagination';
 import { TableSkeleton } from '../../components/SkeletonLoaders';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { AdminUser, Role } from '../../types';
+import { UserPlus, Settings, UserX, UserCheck } from 'lucide-react';
 
 interface PermissionConfig {
   key: string;
@@ -64,6 +74,10 @@ export function AdminUsersPage() {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [savingPermission, setSavingPermission] = useState<string | null>(null);
 
+  // Status Toggle Confirmation Dialog
+  const [statusConfirmUser, setStatusConfirmUser] = useState<AdminUser | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const load = () => {
     setLoading(true);
     setError('');
@@ -83,13 +97,21 @@ export function AdminUsersPage() {
     load();
   }, []);
 
-  const toggleStatus = async (u: AdminUser) => {
+  const handleConfirmToggleStatus = async () => {
+    if (!statusConfirmUser) return;
+    setActionLoading(true);
     try {
-      await setUserStatus(u.id, !u.isActive);
-      showToast(`User ${u.name} status updated!`, 'success');
+      await setUserStatus(statusConfirmUser.id, !statusConfirmUser.isActive);
+      showToast(
+        `User ${statusConfirmUser.name} ${statusConfirmUser.isActive ? 'suspended' : 'activated'} successfully!`,
+        'success'
+      );
+      setStatusConfirmUser(null);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : tr('error'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -132,7 +154,7 @@ export function AdminUsersPage() {
   const roleColors: Record<Role, string> = {
     ADMIN: 'bg-purple-100 text-purple-800 border-purple-200',
     MANAGER: 'bg-amber-100 text-amber-900 border-amber-200',
-    AGENT: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+    AGENT: 'bg-teal-100 text-teal-900 border-teal-200',
     CLIENT: 'bg-blue-100 text-blue-900 border-blue-200',
   };
 
@@ -142,7 +164,10 @@ export function AdminUsersPage() {
       subtitle="Comprehensive user directory, account statuses, and granular RBAC permission overrides."
       actions={
         <Link to="/dashboard/admin/users/new">
-          <Button variant="primary">➕ {tr('createUser')}</Button>
+          <Button variant="primary" className="flex items-center gap-1.5 font-bold shadow-xs">
+            <UserPlus className="h-4 w-4" />
+            <span>{tr('createUser')}</span>
+          </Button>
         </Link>
       }
     >
@@ -162,7 +187,7 @@ export function AdminUsersPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Role Filter Tabs */}
-            <div className="flex rounded-lg border border-gray-200 bg-gray-50/80 p-1 text-xs font-semibold">
+            <div className="flex rounded-lg border border-[#E2E8E6] bg-gray-50/80 p-1 text-xs font-semibold">
               {(['ALL', 'ADMIN', 'MANAGER', 'AGENT', 'CLIENT'] as const).map((r) => (
                 <button
                   key={r}
@@ -172,7 +197,7 @@ export function AdminUsersPage() {
                     setCurrentPage(1);
                   }}
                   className={`rounded-md px-3 py-1 transition ${
-                    selectedRole === r ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                    selectedRole === r ? 'bg-white text-gray-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   {r === 'ALL' ? tr('filterAll') : r}
@@ -181,7 +206,7 @@ export function AdminUsersPage() {
             </div>
 
             {/* Status Filter */}
-            <div className="flex rounded-lg border border-gray-200 bg-gray-50/80 p-1 text-xs font-semibold">
+            <div className="flex rounded-lg border border-[#E2E8E6] bg-gray-50/80 p-1 text-xs font-semibold">
               {(['ALL', 'ACTIVE', 'SUSPENDED'] as const).map((s) => (
                 <button
                   key={s}
@@ -191,7 +216,7 @@ export function AdminUsersPage() {
                     setCurrentPage(1);
                   }}
                   className={`rounded-md px-3 py-1 transition ${
-                    selectedStatus === s ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                    selectedStatus === s ? 'bg-white text-gray-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   {s === 'ALL' ? tr('filterAll') : s === 'ACTIVE' ? tr('active') : tr('suspended')}
@@ -209,84 +234,97 @@ export function AdminUsersPage() {
         <EmptyState message="No matching users found in the directory." />
       )}
 
-      {/* Users Table */}
+      {/* 4.2 & 5. Responsive DataTable with Table -> Card Mobile View */}
       {!loading && filteredUsers.length > 0 && (
         <div className="space-y-4">
-          <Card className="overflow-hidden p-0 border border-gray-200 shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
-                  <tr>
-                    <th className="px-5 py-3.5">{tr('name')}</th>
-                    <th className="px-5 py-3.5">{tr('identifier')}</th>
-                    <th className="px-5 py-3.5">{tr('role')}</th>
-                    <th className="px-5 py-3.5">{tr('status')}</th>
-                    <th className="px-5 py-3.5">{tr('permissions')}</th>
-                    <th className="px-5 py-3.5 text-right">{tr('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedUsers.map((u) => {
-                    const customPermCount = u.permissions?.length ?? 0;
-
-                    return (
-                      <tr key={u.id} className="hover:bg-gray-50/60 transition">
-                        <td className="px-5 py-3.5 font-medium text-gray-900">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 font-bold text-brand-800 border border-brand-200 shrink-0">
-                              {u.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">{u.name}</div>
-                              <div className="text-xs text-gray-400 font-mono">ID: {u.id.slice(0, 8)}...</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-gray-600 font-medium">
-                          {u.email || u.phone || '—'}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${roleColors[u.role]}`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <StatusBadge status={u.isActive ? 'APPROVED' : 'REJECTED'} />
-                        </td>
-                        <td className="px-5 py-3.5">
-                          {u.role === 'ADMIN' ? (
-                            <span className="text-xs font-semibold text-purple-700">Full Master Rights</span>
-                          ) : (
-                            <Button
-                              variant="secondary"
-                              className="text-xs px-2.5 py-1 gap-1"
-                              onClick={() => setEditingUser(u)}
-                            >
-                              ⚙️ {tr('managePermissions')}
-                              {customPermCount > 0 && (
-                                <span className="rounded-full bg-brand-600 px-1.5 py-0.2 text-[10px] text-white">
-                                  {customPermCount}
-                                </span>
-                              )}
-                            </Button>
-                          )}
-                        </td>
-                        <td className="px-5 py-3.5 text-right space-x-2">
-                          <Button
-                            variant={u.isActive ? 'secondary' : 'primary'}
-                            onClick={() => toggleStatus(u)}
-                            className="text-xs px-3 py-1"
-                          >
-                            {u.isActive ? tr('suspended') : tr('active')}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <DataTable<AdminUser>
+            data={paginatedUsers}
+            keyExtractor={(u) => u.id}
+            statusRailExtractor={(u) => (u.isActive ? 'approved' : 'rejected')}
+            columns={[
+              {
+                header: tr('name'),
+                render: (u) => (
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 font-bold text-[#0F766E] border border-teal-200 shrink-0">
+                      {u.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{u.name}</div>
+                      <div className="text-xs text-gray-400 font-mono-data">ID: {u.id.slice(0, 8)}...</div>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                header: tr('identifier'),
+                render: (u) => (
+                  <span className="font-mono-data text-xs text-gray-700 font-medium">
+                    {u.email || u.phone || '—'}
+                  </span>
+                ),
+              },
+              {
+                header: tr('role'),
+                render: (u) => (
+                  <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${roleColors[u.role]}`}>
+                    {u.role}
+                  </span>
+                ),
+              },
+              {
+                header: tr('status'),
+                render: (u) => <StatusBadge status={u.isActive ? 'ACTIVE' : 'SUSPENDED'} />,
+              },
+              {
+                header: tr('permissions'),
+                render: (u) => {
+                  const customPermCount = u.permissions?.length ?? 0;
+                  return u.role === 'ADMIN' ? (
+                    <span className="text-xs font-semibold text-purple-700">Full Master Rights</span>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      className="text-xs px-2.5 py-1 gap-1 min-h-[30px]"
+                      onClick={() => setEditingUser(u)}
+                    >
+                      <Settings className="h-3 w-3" />
+                      <span>{tr('managePermissions')}</span>
+                      {customPermCount > 0 && (
+                        <span className="rounded-full bg-[#0F766E] px-1.5 py-0.2 text-[10px] text-white">
+                          {customPermCount}
+                        </span>
+                      )}
+                    </Button>
+                  );
+                },
+              },
+              {
+                header: tr('actions'),
+                headerClassName: 'text-right',
+                className: 'text-right',
+                render: (u) => (
+                  <Button
+                    variant={u.isActive ? 'secondary' : 'primary'}
+                    onClick={() => setStatusConfirmUser(u)}
+                    className="text-xs px-3 py-1 min-h-[30px] font-bold"
+                  >
+                    {u.isActive ? (
+                      <span className="text-red-700 flex items-center gap-1">
+                        <UserX className="h-3 w-3" />
+                        <span>Suspend</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        <span>Activate</span>
+                      </span>
+                    )}
+                  </Button>
+                ),
+              },
+            ]}
+          />
 
           <Pagination
             currentPage={currentPage}
@@ -304,14 +342,39 @@ export function AdminUsersPage() {
         </div>
       )}
 
+      {/* Account Status Confirmation Dialog */}
+      {statusConfirmUser && (
+        <ConfirmDialog
+          isOpen={Boolean(statusConfirmUser)}
+          title={`${statusConfirmUser.isActive ? 'Suspend' : 'Activate'} User Account?`}
+          message={`Are you sure you want to ${
+            statusConfirmUser.isActive ? 'suspend' : 'activate'
+          } ${statusConfirmUser.name}? ${
+            statusConfirmUser.isActive
+              ? 'Suspended accounts will not be able to log in or manage listings.'
+              : 'Activated accounts will regain full access to their dashboard.'
+          }`}
+          confirmLabel={statusConfirmUser.isActive ? 'Suspend Account' : 'Activate Account'}
+          cancelLabel={tr('cancel')}
+          variant={statusConfirmUser.isActive ? 'danger' : 'primary'}
+          isLoading={actionLoading}
+          onConfirm={handleConfirmToggleStatus}
+          onCancel={() => setStatusConfirmUser(null)}
+        />
+      )}
+
       {/* Granular Permissions Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fadeIn"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.15)] space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  Granular Privileges: <span className="text-brand-700">{editingUser.name}</span>
+                <h3 className="font-heading text-lg font-bold text-gray-900">
+                  Granular Privileges: <span className="text-[#0F766E]">{editingUser.name}</span>
                 </h3>
                 <p className="text-xs text-gray-500">
                   Account Role: <span className="font-bold">{editingUser.role}</span> · Override default privileges for this specific account (FR3a).
@@ -320,7 +383,8 @@ export function AdminUsersPage() {
               <button
                 type="button"
                 onClick={() => setEditingUser(null)}
-                className="text-gray-400 hover:text-gray-700 text-xl font-bold"
+                className="text-gray-400 hover:text-gray-700 text-xl font-bold p-1"
+                aria-label="Close privileges modal"
               >
                 ✕
               </button>
@@ -360,7 +424,7 @@ export function AdminUsersPage() {
                         disabled={isPending}
                         onClick={() => handleTogglePermission(editingUser, p.key, isEnabled)}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          isEnabled ? 'bg-brand-600' : 'bg-gray-200'
+                          isEnabled ? 'bg-[#0F766E]' : 'bg-gray-200'
                         } ${isPending ? 'opacity-50' : ''}`}
                       >
                         <span

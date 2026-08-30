@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { myServiceProfile, registerServiceProvider } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Button, Card, ErrorAlert, Input, LoadingSpinner, Select, StatusBadge, Textarea } from '../../components/ui';
+import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { ServiceProvider } from '../../types';
+import { Wrench, CheckCircle2, Clock } from 'lucide-react';
 
 export function ClientServicePage() {
   const { tr } = useLanguage();
@@ -32,6 +34,7 @@ export function ClientServicePage() {
     try {
       const p = await registerServiceProvider(form);
       setProfile(p);
+      showToast('Service provider profile registered successfully!', 'success');
     } catch (err) {
       setError(err instanceof Error ? err.message : tr('error'));
     } finally {
@@ -48,13 +51,16 @@ export function ClientServicePage() {
         <LoadingSpinner label={tr('loading')} />
       ) : profile ? (
         <div className="max-w-2xl space-y-6">
-          <Card className="p-6 border border-gray-200 shadow-sm space-y-4">
+          <Card
+            statusRail={profile.status === 'PUBLISHED' ? 'published' : 'pending'}
+            className="p-6 border-[#E2E8E6] shadow-sm space-y-4"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="rounded-full bg-purple-100 text-purple-900 text-xs font-bold px-3 py-1 capitalize">
                   {profile.category}
                 </span>
-                <h3 className="text-xl font-bold text-gray-900 mt-2">Active Service Profile</h3>
+                <h3 className="font-heading text-xl font-bold text-gray-900 mt-2">Active Service Profile</h3>
                 <p className="text-xs text-gray-500">
                   Coverage Area: <strong>{profile.coverageDistrict || 'Rwanda'}</strong>
                 </p>
@@ -67,27 +73,46 @@ export function ClientServicePage() {
             </div>
 
             {profile.rateInfo && (
-              <div className="text-sm font-semibold text-brand-700">
+              <div className="text-sm font-semibold text-[#0F766E]">
                 Rate / Pricing: <span className="font-bold">{profile.rateInfo}</span>
               </div>
             )}
 
             <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-              <span>{profile.status === 'PUBLISHED' ? '✓ Visible to clients on Services directory' : '⏳ Under manager review'}</span>
+              <span className="flex items-center gap-1">
+                {profile.status === 'PUBLISHED' ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Visible to clients on Services directory</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-3.5 w-3.5 text-amber-600" />
+                    <span>Under manager verification review</span>
+                  </>
+                )}
+              </span>
             </div>
           </Card>
         </div>
       ) : (
-        <Card className="max-w-2xl p-6 border border-gray-200 shadow-sm">
+        <Card className="max-w-2xl p-6 border-[#E2E8E6] shadow-sm">
           <div className="border-b border-gray-100 pb-3 mb-4">
-            <h3 className="text-lg font-bold text-gray-900">{tr('registerAsProvider')}</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="font-heading text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-[#0F766E]" />
+              <span>{tr('registerAsProvider')}</span>
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
               Reach clients in your district looking for certified trades & specialized services.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <ErrorAlert message={error} />}
+            {error && (
+              <div role="region" aria-live="polite">
+                <ErrorAlert message={error} />
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -98,44 +123,48 @@ export function ClientServicePage() {
                   required
                 >
                   <option value="Plumbing & Electrical">Plumbing & Electrical</option>
-                  <option value="Transport & Logistics">Transport & Logistics</option>
-                  <option value="Tutoring & Training">Tutoring & Training</option>
-                  <option value="Tailoring & Design">Tailoring & Design</option>
-                  <option value="Construction & Masonry">Construction & Masonry</option>
+                  <option value="Carpentry & Masonry">Carpentry & Masonry</option>
+                  <option value="Transport & Moving">Transport & Moving</option>
                   <option value="Cleaning & Gardening">Cleaning & Gardening</option>
-                  <option value="Other Trades">Other Trades</option>
+                  <option value="Painting & Renovation">Painting & Renovation</option>
+                  <option value="Tutoring & IT Support">Tutoring & IT Support</option>
                 </Select>
               </div>
 
               <div className="sm:col-span-2">
-                <Textarea
-                  label={tr('description')}
-                  placeholder="Describe your skills, years of experience, tools, certifications, and availability..."
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                <Input
+                  label="Coverage District / Area"
+                  placeholder="e.g. Kigali (Gasabo, Kicukiro, Nyarugenge) or Musanze"
+                  value={form.coverageDistrict}
+                  onChange={(e) => setForm({ ...form, coverageDistrict: e.target.value })}
                   required
-                  rows={4}
                 />
               </div>
 
-              <Input
-                label="Standard Rates / Pricing Info"
-                value={form.rateInfo}
-                onChange={(e) => setForm({ ...form, rateInfo: e.target.value })}
-                placeholder="e.g. 10,000 RWF/hour or flat rate"
-              />
+              <div className="sm:col-span-2">
+                <Input
+                  label="Standard Rate / Pricing Terms"
+                  placeholder="e.g. 15,000 RWF per visit / diagnostic"
+                  value={form.rateInfo}
+                  onChange={(e) => setForm({ ...form, rateInfo: e.target.value })}
+                />
+              </div>
 
-              <Input
-                label="Coverage District / Sectors"
-                value={form.coverageDistrict}
-                onChange={(e) => setForm({ ...form, coverageDistrict: e.target.value })}
-                placeholder="e.g. Kigali, Musanze"
-              />
+              <div className="sm:col-span-2">
+                <Textarea
+                  label="Service Description & Credentials"
+                  placeholder="Describe your skills, years of experience, certifications, and availability..."
+                  rows={4}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  required
+                />
+              </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-gray-100">
-              <Button type="submit" disabled={submitting} className="px-6 shadow-md">
-                {submitting ? tr('loading') : 'Submit Profile for Verification'}
+            <div className="pt-3 border-t border-gray-100 flex justify-end">
+              <Button type="submit" disabled={submitting} className="font-bold shadow-xs">
+                {submitting ? tr('loading') : 'Submit for review'}
               </Button>
             </div>
           </form>

@@ -1,0 +1,18 @@
+#! db-duhuza-pgdata-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: db-duhuza-pgdata
+    namespace: duhuza
+    labels:
+        com.docker.compose.service: db
+        com.docker.compose.volume: duhuza_pgdata
+spec:
+    accessModes:
+        # TODO would need to check which services use this volume
+        - ReadWriteOnce
+    volumeMode: Filesystem
+    resources:
+        requests:
+            storage: 100Mi

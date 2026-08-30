@@ -1,16 +1,46 @@
 import { useEffect, useState } from 'react';
 import { approveService, pendingServices, rejectService } from '../../api';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { Button, Card, EmptyState, ErrorAlert, LoadingSpinner } from '../../components/ui';
+import {
+  ConfirmDialog,
+  EmptyState,
+  ErrorAlert,
+  LoadingSpinner,
+  ReviewCard,
+} from '../../components/ui';
+import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
+
+function getServiceSampleImage(category: string) {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('electric') || cat.includes('solar')) return '/images/service_electrician.jpg';
+  if (cat.includes('paint')) return '/images/service_painting.jpg';
+  if (cat.includes('mechanic') || cat.includes('auto')) return '/images/service_mechanic.jpg';
+  if (cat.includes('cater') || cat.includes('chef') || cat.includes('event')) return '/images/service_catering.jpg';
+  if (cat.includes('plumb')) return '/images/service_plumbing.jpg';
+  if (cat.includes('gis') || cat.includes('survey')) return '/images/service_surveyor.jpg';
+  return '/images/service_surveyor.jpg';
+}
 
 export function ManagerServicesPage() {
   const { tr } = useLanguage();
-  const [items, setItems] = useState<{ id: string; category: string; description: string; rateInfo?: string | null; coverageDistrict?: string | null; user: { name: string; phone?: string } }[]>([]);
+  const [items, setItems] = useState<
+    {
+      id: string;
+      category: string;
+      description: string;
+      rateInfo?: string | null;
+      coverageDistrict?: string | null;
+      user: { name: string; phone?: string };
+    }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [rejectId, setRejectId] = useState<string | null>(null);
-  const [rejectComment, setRejectComment] = useState('');
+  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; id: string; title: string }>({
+    open: false,
+    id: '',
+    title: '',
+  });
   const [actionLoading, setActionLoading] = useState(false);
 
   const load = () => {
@@ -30,6 +60,7 @@ export function ManagerServicesPage() {
     setActionLoading(true);
     try {
       await approveService(id);
+      showToast('Service provider verified and approved successfully!', 'success');
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -38,13 +69,13 @@ export function ManagerServicesPage() {
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectId || !rejectComment.trim()) return;
+  const handleRejectConfirm = async (comment?: string) => {
+    if (!rejectDialog.id || !comment) return;
     setActionLoading(true);
     try {
-      await rejectService(rejectId, rejectComment);
-      setRejectId(null);
-      setRejectComment('');
+      await rejectService(rejectDialog.id, comment);
+      showToast('Service provider registration rejected.', 'info');
+      setRejectDialog({ open: false, id: '', title: '' });
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -61,85 +92,45 @@ export function ManagerServicesPage() {
       {loading && <LoadingSpinner label={tr('loading')} />}
       {error && <ErrorAlert message={error} onRetry={load} />}
       {!loading && !error && items.length === 0 && (
-        <EmptyState message="No pending service provider profiles to review." />
+        <EmptyState message="Nothing pending — you're caught up." />
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((p) => (
-          <Card key={p.id} className="p-5 border border-gray-200 shadow-sm hover:shadow-md transition space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="rounded bg-purple-100 text-purple-900 text-xs font-bold px-2 py-0.5 capitalize">
-                  {p.category}
-                </span>
-                <h3 className="text-base font-bold text-gray-900 mt-1">{p.user.name}</h3>
-                <p className="text-xs text-gray-500">
-                  📞 {p.user.phone || '—'} · Coverage: {p.coverageDistrict || 'Rwanda'}
-                </p>
-              </div>
-              {p.rateInfo && (
-                <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                  {p.rateInfo}
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2.5">
-              {p.description}
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-              <Button
-                variant="secondary"
-                className="text-xs text-red-600 hover:bg-red-50 border-red-200"
-                onClick={() => {
-                  setRejectId(p.id);
-                  setRejectComment('');
-                }}
-                disabled={actionLoading}
-              >
-                {tr('reject')}
-              </Button>
-              <Button
-                variant="primary"
-                className="text-xs bg-purple-600 hover:bg-purple-700 text-white"
-                onClick={() => handleApprove(p.id)}
-                disabled={actionLoading}
-              >
-                ✓ Verify & Approve
-              </Button>
-            </div>
-          </Card>
+          <ReviewCard
+            key={p.id}
+            id={p.id}
+            title={p.user.name}
+            status="PENDING_REVIEW"
+            category={p.category}
+            location={`Coverage: ${p.coverageDistrict || 'Rwanda'}`}
+            tags={p.rateInfo ? [p.rateInfo] : undefined}
+            description={p.description}
+            imageUrl={getServiceSampleImage(p.category)}
+            submitterInfo={`Phone: ${p.user.phone || '—'}`}
+            approveLabel="Verify & Approve"
+            onApprove={() => handleApprove(p.id)}
+            onReject={() => setRejectDialog({ open: true, id: p.id, title: `${p.user.name} (${p.category})` })}
+            actionLoading={actionLoading}
+          />
         ))}
       </div>
 
-      {rejectId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Service Profile Rejection Note</h3>
-            <textarea
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              placeholder="State reason for rejection..."
-              rows={4}
-              className="w-full rounded-xl border border-gray-300 p-3 text-sm focus:border-red-500 focus:outline-none"
-              required
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setRejectId(null)}>
-                {tr('cancel')}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleReject}
-                disabled={actionLoading || rejectComment.trim().length < 3}
-              >
-                Confirm Rejection
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={rejectDialog.open}
+        title={`Reject Service Provider: ${rejectDialog.title}`}
+        message="State why this service registration cannot be approved at this time."
+        confirmLabel="Confirm Rejection"
+        cancelLabel={tr('cancel')}
+        variant="danger"
+        requireComment={true}
+        commentLabel="Mandatory Reason:"
+        commentPlaceholder="Explain why (e.g. unverified phone number, incomplete credentials, invalid coverage area)..."
+        minCommentLength={3}
+        isLoading={actionLoading}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setRejectDialog({ open: false, id: '', title: '' })}
+      />
     </DashboardLayout>
   );
 }

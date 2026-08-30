@@ -100,6 +100,44 @@ const SAMPLE_PARCELS: SampleParcel[] = [
       [-2.1550, 30.2192],
     ],
   },
+  {
+    id: 'p5',
+    upi: '4/01/02/05/881A',
+    location: 'Kinigi, Musanze (Northern Province)',
+    district: 'Musanze',
+    sector: 'Kinigi',
+    areaSqm: 50000,
+    zoning: 'A1 - Agricultural / Eco-Tourism',
+    surveyor: 'Eng. Patrick Habimana (Reg #RW-SURV-2024-88)',
+    date: '14 Feb 2026',
+    lat: -1.5032,
+    lng: 29.6341,
+    polygon: [
+      [-1.5015, 29.6320],
+      [-1.5018, 29.6360],
+      [-1.5050, 29.6355],
+      [-1.5045, 29.6315],
+    ],
+  },
+  {
+    id: 'p6',
+    upi: '3/04/01/03/312D',
+    location: 'Gisenyi Waterfront, Rubavu (Western Province)',
+    district: 'Rubavu',
+    sector: 'Gisenyi',
+    areaSqm: 1800,
+    zoning: 'T1 - Tourism & Lakefront Villa',
+    surveyor: 'Eng. Eric Munyaneza (Reg #RW-SURV-2023-14)',
+    date: '20 Jan 2026',
+    lat: -1.6834,
+    lng: 29.2612,
+    polygon: [
+      [-1.6825, 29.2600],
+      [-1.6826, 29.2625],
+      [-1.6845, 29.2620],
+      [-1.6842, 29.2598],
+    ],
+  },
 ];
 
 const DISTRICT_LOCATIONS: Record<string, { lat: number; lng: number; zoom: number }> = {
@@ -495,7 +533,7 @@ export function GisPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded bg-emerald-100 px-2 py-0.5 font-medium text-emerald-800">
-                    4 Verified Sample Parcels
+                    {SAMPLE_PARCELS.length} Verified Sample Parcels
                   </span>
                 </div>
               </div>

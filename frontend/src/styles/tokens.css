@@ -1,0 +1,70 @@
+/**
+ * Duhuza Property Platform - Design System Tokens
+ * Reference: Dashboard UI/UX Development Plan (Section 2)
+ */
+
+:root {
+  /* 2.1 Brand & Semantic Palette */
+  --color-primary: #0F766E;        /* Deep Teal: Primary buttons, active nav, links */
+  --color-primary-dark: #0B5750;   /* Hover / Pressed states */
+  --color-primary-light: #CCFBF1;  /* Light teal tint for badges and highlights */
+  --color-accent: #F59E0B;         /* Amber: Promoted badges, price emphasis */
+  --color-bg: #F7F9F8;             /* Clean dashboard surface background */
+  --color-surface: #FFFFFF;        /* Cards, panels, modals */
+  --color-text-primary: #16241F;   /* Headings, high-contrast body text */
+  --color-text-secondary: #5B6B66; /* Captions, metadata, placeholders */
+  --color-border: #E2E8E6;         /* Dividers, input outlines, table borders */
+  
+  /* Status Colors */
+  --color-success: #15803D;        /* Approved / Published / Completed */
+  --color-success-bg: #DCFCE7;
+  --color-warning: #B45309;        /* Pending Review / In Progress */
+  --color-warning-bg: #FEF3C7;
+  --color-danger: #B91C1C;         /* Rejected / Suspended / Action Required */
+  --color-danger-bg: #FEE2E2;
+  --color-info: #1D4ED8;           /* Sold / Rented / Requested */
+  --color-info-bg: #DBEAFE;
+  --color-neutral: #64748B;        /* Draft / Archived */
+  --color-neutral-bg: #F1F5F9;
+
+  /* 2.2 Typography */
+  --font-heading: 'Sora', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Type Scale (base 16px) */
+  --font-size-xs: 0.75rem;    /* 12px: Badges, captions, timestamps */
+  --font-size-sm: 0.875rem;   /* 14px: Secondary body, table cells */
+  --font-size-base: 1rem;     /* 16px: Standard body, inputs, button labels */
+  --font-size-lg: 1.25rem;    /* 20px: Section subheadings */
+  --font-size-xl: 1.5rem;     /* 24px: Modal titles, page subheaders */
+  --font-size-2xl: 2rem;      /* 32px: Main page titles, prominent prices */
+
+  /* 2.3 Spacing Scale (4, 8, 12, 16, 24, 32, 48, 64px) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* 2.3 Shape & Elevation */
+  --radius-card: 8px;
+  --radius-input: 6px;
+  --radius-btn: 6px;
+  --radius-pill: 9999px;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.10);
+
+  /* 2.4 Signature Status Rail */
+  --status-rail-width: 4px;
+
+  /* Layout Dimensions */
+  --sidebar-width-full: 260px;
+  --sidebar-width-collapsed: 68px;
+  --bottom-nav-height: 64px;
+}

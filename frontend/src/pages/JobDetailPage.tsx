@@ -10,10 +10,10 @@ import { BadgeCheck, Building2, CalendarDays, MapPin, Send, Wallet } from 'lucid
 function getJobImage(job: Job) {
   const title = job.title.toLowerCase();
   if (title.includes('survey') || title.includes('field')) return '/images/gis_field_surveyor.jpg';
-  if (title.includes('developer')) return '/images/commercial_kigali.jpg';
-  if (title.includes('marketing')) return '/images/market_electronics.jpg';
-  if (title.includes('intern')) return '/images/land_parcel_rwanda.jpg';
-  return '/images/service_surveyor.jpg';
+  if (title.includes('developer')) return '/images/office_commercial_kigali.jpg';
+  if (title.includes('marketing') || title.includes('design')) return '/images/market_smartphone.jpg';
+  if (title.includes('intern') || title.includes('operations')) return '/images/warehouse_logistics.jpg';
+  return '/images/commercial_kigali.jpg';
 }
 
 export function JobDetailPage() {

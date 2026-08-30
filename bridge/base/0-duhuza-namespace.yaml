@@ -1,0 +1,8 @@
+#! 0-duhuza-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: duhuza
+    labels:
+        com.docker.compose.project: duhuza

@@ -1,0 +1,9 @@
+#! db-duhuza-pgdata-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: db-duhuza-pgdata
+    namespace: duhuza
+spec:
+    storageClassName: "hostpath" # see docker/desktop-storage-provisioner

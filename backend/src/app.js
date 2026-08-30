@@ -10,10 +10,38 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+function isAllowedOrigin(origin) {
+  if (!origin || allowedOrigins.includes(origin)) return true;
+
+  try {
+    const { protocol, hostname, port } = new URL(origin);
+    const isHttp = protocol === 'http:' || protocol === 'https:';
+    const isDevPort = !port || port === '5173';
+    const isPrivateLan =
+      hostname === 'localhost' ||
+      /^127\.\d+\.\d+\.\d+$/.test(hostname) ||
+      /^10\.\d+\.\d+\.\d+$/.test(hostname) ||
+      /^192\.168\.\d+\.\d+$/.test(hostname) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(hostname);
+
+    return isHttp && isDevPort && isPrivateLan;
+  } catch {
+    return false;
+  }
+}
+
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error('Origin is not allowed by CORS'));
+    },
     credentials: true,
   })
 );

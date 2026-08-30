@@ -12,6 +12,15 @@ import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
 import type { Job } from '../../types';
 
+function getJobSampleImage(title: string) {
+  const t = (title || '').toLowerCase();
+  if (t.includes('survey') || t.includes('field') || t.includes('gis') || t.includes('land')) return '/images/gis_field_surveyor.jpg';
+  if (t.includes('developer') || t.includes('tech') || t.includes('engineer')) return '/images/office_commercial_kigali.jpg';
+  if (t.includes('marketing') || t.includes('design') || t.includes('content')) return '/images/market_smartphone.jpg';
+  if (t.includes('intern') || t.includes('operations') || t.includes('logistics') || t.includes('agri')) return '/images/warehouse_logistics.jpg';
+  return '/images/commercial_kigali.jpg';
+}
+
 export function ManagerJobsPage() {
   const { tr } = useLanguage();
   const [items, setItems] = useState<(Job & { employer: { name: string; phone?: string } })[]>([]);
@@ -86,6 +95,7 @@ export function ManagerJobsPage() {
             location={job.location || 'Rwanda'}
             tags={job.salaryRange ? [job.salaryRange] : undefined}
             description={job.description}
+            imageUrl={getJobSampleImage(job.title)}
             submitterInfo={`Employer: ${job.employer?.name || '—'} (${job.employer?.phone || '—'})`}
             onApprove={() => handleApprove(job.id)}
             onReject={() => setRejectDialog({ open: true, id: job.id, title: job.title })}

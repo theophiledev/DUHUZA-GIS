@@ -58,6 +58,13 @@ npm run dev                   # http://localhost:4000
 
 - API Health check: `GET http://localhost:4000/health`
 - Run Backend Tests: `npm test`
+#### OTHER DEVIVE TEST
+Run commands manually next time:
+cd C:\Users\USER\Desktop\Duhuza\backend
+npm run dev
+In another terminal:
+cd C:\Users\USER\Desktop\Duhuza\frontend
+npm run dev -- --host 0.0.0.0
 
 ### 2. Frontend Setup
 

@@ -36,11 +36,11 @@ function getJobCategoryLabel(job: Job, tr: (key: import('../i18n/translations').
 
 function getJobImage(job: Job) {
   const category = getJobCategory(job);
-  if (category === 'Technology') return '/images/commercial_kigali.jpg';
+  if (category === 'Technology') return '/images/office_commercial_kigali.jpg';
   if (category === 'Land and GIS') return '/images/gis_field_surveyor.jpg';
-  if (category === 'Marketing') return '/images/market_electronics.jpg';
-  if (category === 'Internships') return '/images/land_parcel_rwanda.jpg';
-  return '/images/service_surveyor.jpg';
+  if (category === 'Marketing') return '/images/market_smartphone.jpg';
+  if (category === 'Internships') return '/images/warehouse_logistics.jpg';
+  return '/images/commercial_kigali.jpg';
 }
 
 export function JobsPage() {
