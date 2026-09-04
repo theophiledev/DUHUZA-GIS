@@ -16,8 +16,9 @@ import { Pagination } from '../../components/Pagination';
 import { TableSkeleton } from '../../components/SkeletonLoaders';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
+import { ManagerItemDetailModal, type ManagerItemDetailData } from '../../components/ManagerItemDetailModal';
 import type { InternalListing } from '../../types';
-import { Lock, Search, MapPin } from 'lucide-react';
+import { Lock, Search, MapPin, Eye, User } from 'lucide-react';
 
 export function ManagerListingsPage() {
   const { tr } = useLanguage();
@@ -29,9 +30,15 @@ export function ManagerListingsPage() {
     id: '',
     title: '',
   });
+  const [approveDialog, setApproveDialog] = useState<{ open: boolean; id: string; title: string }>({
+    open: false,
+    id: '',
+    title: '',
+  });
   const [actionLoading, setActionLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const [detailModalItem, setDetailModalItem] = useState<ManagerItemDetailData | null>(null);
 
   // Lightbox
   const [lightboxImages, setLightboxImages] = useState<{ url: string; title?: string }[]>([]);
@@ -54,11 +61,17 @@ export function ManagerListingsPage() {
     load();
   }, []);
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, title: string) => {
+    setApproveDialog({ open: true, id, title });
+  };
+
+  const handleApproveConfirm = async (comment?: string) => {
+    if (!approveDialog.id) return;
     setActionLoading(true);
     try {
-      await approveListing(id);
+      await approveListing(approveDialog.id, comment);
       showToast('Listing approved and published successfully!', 'success');
+      setApproveDialog({ open: false, id: '', title: '' });
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -164,24 +177,80 @@ export function ManagerListingsPage() {
 
                     {desc && <p className="text-xs text-gray-600 line-clamp-2">{desc}</p>}
 
-                    {/* Private Owner & Agent Info */}
-                    <div className="grid gap-3 sm:grid-cols-2 rounded-xl bg-amber-50/70 border border-amber-200/60 p-3 text-xs text-amber-950">
+                    {/* Submitter Agent & Private Owner Info Box */}
+                    <div className="grid gap-3 sm:grid-cols-2 rounded-xl bg-amber-50/70 border border-amber-200/60 p-3.5 text-xs text-amber-950">
                       <div>
-                        <span className="font-bold flex items-center gap-1">
+                        <div className="font-bold flex items-center gap-1.5 text-amber-900 mb-1">
+                          <User className="h-3.5 w-3.5 text-amber-800" />
+                          <span>Submitter Agent:</span>
+                          <span className="font-semibold text-teal-900">{l.agent?.name || 'Agent'}</span>
+                        </div>
+                        <div className="text-[11px] text-amber-900">
+                          Phone: <span className="font-mono-data font-semibold">{l.agent?.phone || '—'}</span>
+                        </div>
+                        {l.agent?.email && (
+                          <div className="text-[11px] text-amber-900 truncate">
+                            Email: <span className="font-semibold">{l.agent.email}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="font-bold flex items-center gap-1.5 text-amber-900 mb-1">
                           <Lock className="h-3.5 w-3.5 text-amber-800" />
                           <span>Confidential Owner:</span>
-                          <span className="font-semibold">{l.ownerName || '—'}</span>
-                        </span>
-                        <div>Owner Phone: <span className="font-mono-data font-semibold">{l.ownerPhone || '—'}</span></div>
-                      </div>
-                      <div>
-                        <span className="font-bold">Agent ID:</span> <span className="font-mono-data">{l.agentId.slice(0, 8)}...</span>
-                        {l.internalNotes && <div>Internal Note: <em>{l.internalNotes}</em></div>}
+                          <span className="font-semibold text-amber-950">{l.ownerName || '—'}</span>
+                        </div>
+                        <div className="text-[11px] text-amber-900">
+                          Owner Phone: <span className="font-mono-data font-semibold">{l.ownerPhone || '—'}</span>
+                        </div>
+                        {l.internalNotes && (
+                          <div className="text-[11px] text-amber-900 italic truncate">
+                            Note: {l.internalNotes}
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                      <Button
+                        variant="secondary"
+                        className="text-xs text-[#0F766E] border-teal-200 hover:bg-teal-50"
+                        onClick={() =>
+                          setDetailModalItem({
+                            id: l.id,
+                            type: 'listing',
+                            typeLabel: 'Property Listing',
+                            title,
+                            status: l.status,
+                            category: l.category,
+                            listingType: l.listingType,
+                            price: l.price,
+                            currency: l.currency,
+                            description: desc,
+                            district: l.district,
+                            sector: l.sector,
+                            cell: l.cell,
+                            village: l.village,
+                            publicLat: l.publicLat,
+                            publicLng: l.publicLng,
+                            privateLat: l.privateLat,
+                            privateLng: l.privateLng,
+                            ownerName: l.ownerName,
+                            ownerPhone: l.ownerPhone,
+                            internalNotes: l.internalNotes,
+                            createdAt: l.createdAt,
+                            media: l.media,
+                            attributes: l.attributes,
+                            translations: l.translations,
+                            submitter: l.agent,
+                          })
+                        }
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        Inspect Details
+                      </Button>
                       <Button
                         variant="secondary"
                         className="text-xs text-red-700 hover:bg-red-50 border-red-200"
@@ -193,7 +262,7 @@ export function ManagerListingsPage() {
                       <Button
                         variant="primary"
                         className="text-xs font-bold"
-                        onClick={() => handleApprove(l.id)}
+                        onClick={() => handleApprove(l.id, (l.translations?.[0]?.title || 'Listing'))}
                         disabled={actionLoading}
                       >
                         ✓ {tr('approve')} & Publish
@@ -221,6 +290,22 @@ export function ManagerListingsPage() {
         </div>
       )}
 
+      {/* Approve Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={approveDialog.open}
+        title={`Approve Property Listing: ${approveDialog.title}`}
+        message="This listing will be published immediately and visible to all clients. You can optionally add feedback about what was done well."
+        confirmLabel="✓ Approve & Publish"
+        cancelLabel={tr('cancel')}
+        variant="primary"
+        requireComment={false}
+        commentLabel="Optional Approval Feedback (visible to public):"
+        commentPlaceholder="E.g., Great photos, verified owner info, complete documentation..."
+        isLoading={actionLoading}
+        onConfirm={handleApproveConfirm}
+        onCancel={() => setApproveDialog({ open: false, id: '', title: '' })}
+      />
+
       {/* Reject Confirmation Dialog */}
       <ConfirmDialog
         isOpen={rejectDialog.open}
@@ -245,6 +330,40 @@ export function ManagerListingsPage() {
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         onSelectIndex={setLightboxIndex}
+      />
+
+      {/* Full Detail Inspection Modal */}
+      <ManagerItemDetailModal
+        isOpen={Boolean(detailModalItem)}
+        item={detailModalItem}
+        onClose={() => setDetailModalItem(null)}
+        onApprove={async (id, comment) => {
+          setActionLoading(true);
+          try {
+            await approveListing(id, comment);
+            showToast('Listing approved and published successfully!', 'success');
+            setDetailModalItem(null);
+            load();
+          } catch (e) {
+            alert(e instanceof Error ? e.message : tr('error'));
+          } finally {
+            setActionLoading(false);
+          }
+        }}
+        onReject={async (id, comment) => {
+          setActionLoading(true);
+          try {
+            await rejectListing(id, comment);
+            showToast('Listing rejected and feedback logged for agent.', 'info');
+            setDetailModalItem(null);
+            load();
+          } catch (e) {
+            alert(e instanceof Error ? e.message : tr('error'));
+          } finally {
+            setActionLoading(false);
+          }
+        }}
+        actionLoading={actionLoading}
       />
     </DashboardLayout>
   );

@@ -439,9 +439,12 @@ export function GisPage() {
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a href="#survey-form">
-                <Button className="bg-white text-brand-900 shadow-lg hover:bg-emerald-50 text-base py-2.5 px-6 font-bold">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-6 py-2.5 text-base font-extrabold text-[#064E3B] shadow-lg hover:bg-emerald-50 active:translate-y-px transition-all cursor-pointer min-h-[42px]"
+                >
                   {tr('requestSurveyNow')} →
-                </Button>
+                </button>
               </a>
               <a href="#interactive-map">
                 <Button variant="secondary" className="border-emerald-400/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 text-base py-2.5 px-5">

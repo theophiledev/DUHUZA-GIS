@@ -10,6 +10,8 @@ import {
 } from '../../components/ui';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
+import { ManagerItemDetailModal, type ManagerItemDetailData } from '../../components/ManagerItemDetailModal';
+import type { ServiceProvider } from '../../types';
 
 function getServiceSampleImage(category: string) {
   const cat = (category || '').toLowerCase();
@@ -24,19 +26,16 @@ function getServiceSampleImage(category: string) {
 
 export function ManagerServicesPage() {
   const { tr } = useLanguage();
-  const [items, setItems] = useState<
-    {
-      id: string;
-      category: string;
-      description: string;
-      rateInfo?: string | null;
-      coverageDistrict?: string | null;
-      user: { name: string; phone?: string };
-    }[]
-  >([]);
+  const [items, setItems] = useState<ServiceProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [detailModalItem, setDetailModalItem] = useState<ManagerItemDetailData | null>(null);
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; id: string; title: string }>({
+    open: false,
+    id: '',
+    title: '',
+  });
+  const [approveDialog, setApproveDialog] = useState<{ open: boolean; id: string; title: string }>({
     open: false,
     id: '',
     title: '',
@@ -56,11 +55,17 @@ export function ManagerServicesPage() {
     load();
   }, []);
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, title: string) => {
+    setApproveDialog({ open: true, id, title });
+  };
+
+  const handleApproveConfirm = async (comment?: string) => {
+    if (!approveDialog.id) return;
     setActionLoading(true);
     try {
-      await approveService(id);
+      await approveService(approveDialog.id, comment);
       showToast('Service provider verified and approved successfully!', 'success');
+      setApproveDialog({ open: false, id: '', title: '' });
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : tr('error'));
@@ -100,21 +105,67 @@ export function ManagerServicesPage() {
           <ReviewCard
             key={p.id}
             id={p.id}
-            title={p.user.name}
+            title={p.user?.name || 'Service Provider'}
             status="PENDING_REVIEW"
             category={p.category}
             location={`Coverage: ${p.coverageDistrict || 'Rwanda'}`}
             tags={p.rateInfo ? [p.rateInfo] : undefined}
             description={p.description}
             imageUrl={getServiceSampleImage(p.category)}
-            submitterInfo={`Phone: ${p.user.phone || '—'}`}
+            submitterInfo={
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-800 font-bold text-xs">
+                  {p.user?.name ? p.user.name.charAt(0).toUpperCase() : 'P'}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-900 text-xs flex items-center gap-1.5">
+                    <span>{p.user?.name || 'Provider'}</span>
+                    <span className="rounded bg-purple-50 px-1 py-0.2 text-[10px] font-bold text-purple-800">PROVIDER</span>
+                  </div>
+                  <div className="text-[11px] text-gray-500 font-mono-data">
+                    {p.user?.phone || p.user?.email || '—'}
+                  </div>
+                </div>
+              </div>
+            }
             approveLabel="Verify & Approve"
-            onApprove={() => handleApprove(p.id)}
-            onReject={() => setRejectDialog({ open: true, id: p.id, title: `${p.user.name} (${p.category})` })}
+            onInspect={() =>
+              setDetailModalItem({
+                id: p.id,
+                type: 'service',
+                typeLabel: 'Service Provider Profile',
+                title: p.user?.name ? `${p.user.name} (${p.category})` : p.category,
+                status: p.status,
+                category: p.category,
+                description: p.description,
+                rateInfo: p.rateInfo,
+                coverageDistrict: p.coverageDistrict,
+                coverageSector: p.coverageSector,
+                createdAt: p.createdAt,
+                submitter: p.user,
+              })
+            }
+            onApprove={() => handleApprove(p.id, `${p.user?.name || 'Provider'} (${p.category})`)}
+            onReject={() => setRejectDialog({ open: true, id: p.id, title: `${p.user?.name || 'Provider'} (${p.category})` })}
             actionLoading={actionLoading}
           />
         ))}
       </div>
+
+      <ConfirmDialog
+        isOpen={approveDialog.open}
+        title={`Verify Service Provider: ${approveDialog.title}`}
+        message="This service provider will be verified and able to accept client requests. You can optionally add comments about their qualifications or verification status."
+        confirmLabel="✓ Verify & Approve"
+        cancelLabel={tr('cancel')}
+        variant="primary"
+        requireComment={false}
+        commentLabel="Optional Approval Notes (visible to public):"
+        commentPlaceholder="E.g., Credentials verified, excellent references, professional qualifications..."
+        isLoading={actionLoading}
+        onConfirm={handleApproveConfirm}
+        onCancel={() => setApproveDialog({ open: false, id: '', title: '' })}
+      />
 
       <ConfirmDialog
         isOpen={rejectDialog.open}
@@ -130,6 +181,40 @@ export function ManagerServicesPage() {
         isLoading={actionLoading}
         onConfirm={handleRejectConfirm}
         onCancel={() => setRejectDialog({ open: false, id: '', title: '' })}
+      />
+
+      {/* Full Detail Inspection Modal */}
+      <ManagerItemDetailModal
+        isOpen={Boolean(detailModalItem)}
+        item={detailModalItem}
+        onClose={() => setDetailModalItem(null)}
+        onApprove={async (id, comment) => {
+          setActionLoading(true);
+          try {
+            await approveService(id, comment);
+            showToast('Service provider profile verified and approved!', 'success');
+            setDetailModalItem(null);
+            load();
+          } catch (e) {
+            alert(e instanceof Error ? e.message : tr('error'));
+          } finally {
+            setActionLoading(false);
+          }
+        }}
+        onReject={async (id, comment) => {
+          setActionLoading(true);
+          try {
+            await rejectService(id, comment);
+            showToast('Service provider registration rejected.', 'info');
+            setDetailModalItem(null);
+            load();
+          } catch (e) {
+            alert(e instanceof Error ? e.message : tr('error'));
+          } finally {
+            setActionLoading(false);
+          }
+        }}
+        actionLoading={actionLoading}
       />
     </DashboardLayout>
   );

@@ -5,8 +5,9 @@ import { DashboardLayout } from '../../components/DashboardLayout';
 import { Button, Card, EmptyState, ErrorAlert, LoadingSpinner, StatusBadge } from '../../components/ui';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
+import { ManagerItemDetailModal, type ManagerItemDetailData } from '../../components/ManagerItemDetailModal';
 import type { AdminUser, GisRequest } from '../../types';
-import { MapPin, ExternalLink, FileText } from 'lucide-react';
+import { MapPin, ExternalLink, FileText, Eye, User } from 'lucide-react';
 
 export function ManagerGisPage() {
   const { tr } = useLanguage();
@@ -16,6 +17,7 @@ export function ManagerGisPage() {
   const [error, setError] = useState('');
   const [agentIds, setAgentIds] = useState<Record<string, string>>({});
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [detailModalItem, setDetailModalItem] = useState<ManagerItemDetailData | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -85,15 +87,52 @@ export function ManagerGisPage() {
                   <span className="text-xs font-mono-data text-gray-400">ID: {r.id.slice(0, 8)}</span>
                 </div>
                 <h3 className="font-heading font-bold text-gray-900 mt-1.5 text-base">{r.purpose}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Client: <span className="font-semibold text-gray-800">{r.client?.name}</span> ({r.client?.phone || '—'})
-                </p>
+                
+                {/* Submitter Profile Info */}
+                <div className="mt-2.5 flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">
+                    {r.client?.name ? r.client.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                  </div>
+                  <div className="text-xs">
+                    <div className="font-semibold text-gray-900 flex items-center gap-1.5">
+                      <span>{r.client?.name || 'Client'}</span>
+                      <span className="rounded bg-emerald-50 px-1 py-0.2 text-[10px] font-bold text-emerald-800">CLIENT</span>
+                    </div>
+                    <div className="text-[11px] text-gray-500 font-mono-data">
+                      {r.client?.phone || r.client?.email || '—'}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="text-right">
-                <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-mono-data font-bold text-emerald-800">
+              <div className="text-right space-y-2">
+                <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-mono-data font-bold text-emerald-800 inline-block">
                   <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />{r.parcelLat}, {r.parcelLng}</span>
                 </span>
+                <div>
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      setDetailModalItem({
+                        id: r.id,
+                        type: 'gis',
+                        typeLabel: 'GIS Cadastral Survey Mission',
+                        title: r.purpose,
+                        status: r.status,
+                        publicLat: r.parcelLat,
+                        publicLng: r.parcelLng,
+                        createdAt: r.createdAt,
+                        submitter: r.client,
+                        assignedAgent: r.assignedAgent,
+                        reportUrl: r.reportUrl,
+                      })
+                    }
+                    className="text-xs text-[#0F766E] border-teal-200 hover:bg-teal-50 px-2.5 py-1"
+                  >
+                    <Eye className="h-3.5 w-3.5 mr-1" />
+                    Inspect Details
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -129,7 +168,7 @@ export function ManagerGisPage() {
 
               {r.assignedAgent && (
                 <div className="text-xs text-emerald-800 font-semibold pt-1">
-                  ✓ Surveyor Contact: {r.assignedAgent.name} · {r.assignedAgent.phone || 'No phone'}
+                  ✓ Surveyor Contact: {r.assignedAgent.name} · {r.assignedAgent.phone || r.assignedAgent.email || 'No phone'}
                 </div>
               )}
             </div>
@@ -145,6 +184,21 @@ export function ManagerGisPage() {
           </Card>
         ))}
       </div>
+
+      {/* Full Detail Inspection Modal */}
+      <ManagerItemDetailModal
+        isOpen={Boolean(detailModalItem)}
+        item={detailModalItem}
+        onClose={() => setDetailModalItem(null)}
+        onApprove={async () => {
+          showToast('GIS request details verified.', 'info');
+          setDetailModalItem(null);
+        }}
+        onReject={async () => {
+          showToast('GIS request review completed.', 'info');
+          setDetailModalItem(null);
+        }}
+      />
     </DashboardLayout>
   );
 }

@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../config/db');
+const { sendSubmissionReceivedEmail } = require('../utils/emailService');
 
 // A Client "upgrades" their own account to a service provider — still
 // self-serve (FR38), still goes through manager approval (BR12).
@@ -22,6 +23,17 @@ async function registerAsProvider(req, res) {
   const provider = await prisma.serviceProvider.create({
     data: { userId: req.user.id, ...parsed.data, status: 'PENDING_REVIEW' },
   });
+
+  // Dispatch receipt email
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (user && user.email) {
+    sendSubmissionReceivedEmail({
+      to: user.email,
+      name: user.name,
+      itemType: 'Service Provider Profile',
+      itemTitle: `${user.name} (${provider.category})`,
+    }).catch((err) => console.error('[ServicesController] Failed to send receipt email:', err.message));
+  }
 
   return res.status(201).json(provider);
 }

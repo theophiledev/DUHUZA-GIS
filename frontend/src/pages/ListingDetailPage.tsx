@@ -9,6 +9,7 @@ import { DetailSkeleton } from '../components/SkeletonLoaders';
 import { showToast } from '../components/Toast';
 import { useLanguage } from '../context/LanguageContext';
 import { PinIcon } from '../components/FilterBar';
+import { ReviewsAndComments } from '../components/ReviewsAndComments';
 import type { PublicListing } from '../types';
 import { Search, Share2 } from 'lucide-react';
 
@@ -196,6 +197,14 @@ export function ListingDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Ratings, Comments & Verified Reviews Section */}
+      <ReviewsAndComments
+        itemId={listing.id}
+        itemType="listing"
+        itemTitle={listing.title || 'this property'}
+        approvalComment={listing.approvalComment || undefined}
+      />
 
       {/* Lightbox Gallery Modal */}
       <ImageLightbox

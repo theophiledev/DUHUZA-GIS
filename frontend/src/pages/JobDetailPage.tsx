@@ -4,6 +4,7 @@ import { applyToJob, getJob } from '../api';
 import { Button, Card, ErrorAlert, Input, LoadingSpinner } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { ReviewsAndComments } from '../components/ReviewsAndComments';
 import type { Job } from '../types';
 import { BadgeCheck, Building2, CalendarDays, MapPin, Send, Wallet } from 'lucide-react';
 
@@ -92,6 +93,14 @@ export function JobDetailPage() {
           )}
         </Card>
       </div>
+
+      {/* Ratings & Reviews for this Opportunity / Employer */}
+      <ReviewsAndComments
+        itemId={job.id}
+        itemType="job"
+        itemTitle={job.title}
+        approvalComment={job.approvalComment || undefined}
+      />
     </div>
   );
 }

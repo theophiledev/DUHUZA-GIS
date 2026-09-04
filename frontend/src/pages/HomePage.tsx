@@ -21,26 +21,34 @@ export function HomePage() {
             {tr('heroSubtitle')}
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/listings">
-              <Button className="bg-white text-brand-900 shadow-lg hover:bg-brand-50 font-bold px-6 py-3 text-base">
-                <span className="inline-flex items-center gap-2"><Home size={18} strokeWidth={1.75} />{tr('browseProperties')}</span>
-              </Button>
+          <div className="mt-8 flex flex-wrap items-center gap-3.5">
+            <Link
+              to="/listings"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-base font-extrabold text-[#0B5750] shadow-lg transition-all hover:bg-emerald-50 hover:shadow-xl active:scale-[0.98]"
+            >
+              <Home size={18} strokeWidth={2.25} />
+              <span>{tr('browseProperties')}</span>
             </Link>
-            <Link to="/gis">
-              <Button variant="secondary" className="border-emerald-300/40 bg-emerald-500/20 text-white backdrop-blur hover:bg-emerald-500/30 font-bold px-6 py-3 text-base">
-                <span className="inline-flex items-center gap-2"><Map size={18} strokeWidth={1.75} />{tr('gisNav')}</span>
-              </Button>
+            <Link
+              to="/gis"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/60 bg-emerald-700/80 px-6 py-3 text-base font-bold text-white shadow-md backdrop-blur-md transition-all hover:bg-emerald-600 active:scale-[0.98]"
+            >
+              <Map size={18} strokeWidth={2} />
+              <span>{tr('gisNav')}</span>
             </Link>
-            <Link to="/market">
-              <Button variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 px-5 py-3 text-base">
-                <span className="inline-flex items-center gap-2"><ShoppingBag size={18} strokeWidth={1.75} />{tr('market')}</span>
-              </Button>
+            <Link
+              to="/market"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/15 px-5 py-3 text-base font-bold text-white shadow-md backdrop-blur-md transition-all hover:bg-white/25 active:scale-[0.98]"
+            >
+              <ShoppingBag size={18} strokeWidth={2} />
+              <span>{tr('market')}</span>
             </Link>
-            <Link to="/jobs">
-              <Button variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 px-5 py-3 text-base">
-                <span className="inline-flex items-center gap-2"><BriefcaseBusiness size={18} strokeWidth={1.75} />{tr('jobs')}</span>
-              </Button>
+            <Link
+              to="/jobs"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/15 px-5 py-3 text-base font-bold text-white shadow-md backdrop-blur-md transition-all hover:bg-white/25 active:scale-[0.98]"
+            >
+              <BriefcaseBusiness size={18} strokeWidth={2} />
+              <span>{tr('jobs')}</span>
             </Link>
           </div>
         </div>

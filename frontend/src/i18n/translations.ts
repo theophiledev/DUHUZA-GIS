@@ -238,7 +238,38 @@ export type TranslationKey =
   | 'exploreEcosystem'
   | 'fastSecureVerified'
   | 'manageAccounts'
-  | 'searchUsers';
+  | 'searchUsers'
+  | 'forgotPassword'
+  | 'forgotPasswordSubtitle'
+  | 'resetPassword'
+  | 'resetPasswordSubtitle'
+  | 'sendResetCode'
+  | 'resetCode'
+  | 'enterResetCode'
+  | 'codeSentNotice'
+  | 'newPassword'
+  | 'confirmPassword'
+  | 'passwordsDoNotMatch'
+  | 'passwordResetSuccess'
+  | 'passwordChangedSuccess'
+  | 'backToLogin'
+  | 'profile'
+  | 'myProfile'
+  | 'profileOverview'
+  | 'personalInfo'
+  | 'securitySettings'
+  | 'changePassword'
+  | 'currentPassword'
+  | 'updateProfile'
+  | 'profileUpdatedSuccess'
+  | 'memberSince'
+  | 'accountDetails'
+  | 'sessionSecurity'
+  | 'sessionSecurityDesc'
+  | 'inactivityTimeoutWarning'
+  | 'sessionExpiredDueToInactivity'
+  | 'stayActive'
+  | 'viewProfile';
 
 type Translations = Record<TranslationKey, string>;
 
@@ -479,6 +510,37 @@ const rw: Translations = {
   fastSecureVerified: 'Byihuse, bifite umutekano kandi byemejwe mu Rwanda',
   manageAccounts: 'Genzura konti, imiterere n’uburenganzira bwihariye',
   searchUsers: 'Shakisha ukoresheje amazina, imeyili cyangwa telefone...',
+  forgotPassword: 'Wibagiwe ijambobanga?',
+  forgotPasswordSubtitle: 'Injiza imeyili cyangwa nimero ya telefone yawe kugira ngo wakire kode yo guhindura ijambobanga.',
+  resetPassword: 'Hindura Ijambobanga',
+  resetPasswordSubtitle: 'Shyiramo kode yo kwemeza hamwe n\'ijambobanga rishya rikomeye.',
+  sendResetCode: 'Ohereza Kode yo Kwemeza',
+  resetCode: 'Kode yo Kwemeza (Imibare 6)',
+  enterResetCode: 'Injiza kode y\'imibare 6',
+  codeSentNotice: 'Kode yo kwemeza yoherejwe kuri konti yawe. Izamara iminota 15.',
+  newPassword: 'Ijambobanga Rishya',
+  confirmPassword: 'Emeza Ijambobanga Rishya',
+  passwordsDoNotMatch: 'Amagambo y\'ibanga ntabwo ahuye',
+  passwordResetSuccess: 'Ijambobanga ryahinduwe neza! Urashobora kwinjira ubu.',
+  passwordChangedSuccess: 'Ijambobanga ryawe ryahinduwe neza.',
+  backToLogin: 'Subira Kwinjira',
+  profile: 'Umwirondoro',
+  myProfile: 'Umwirondoro Wanjye',
+  profileOverview: 'Incamake y\'Umwirondoro',
+  personalInfo: 'Amakuru Yiteganyirije',
+  securitySettings: 'Umutekano n\'Ijambobanga',
+  changePassword: 'Guhindura Ijambobanga',
+  currentPassword: 'Ijambobanga Risanzwe',
+  updateProfile: 'Guhindura Umwirondoro',
+  profileUpdatedSuccess: 'Umwirondoro wavuguruwe neza.',
+  memberSince: 'Yinjiye kuva',
+  accountDetails: 'Amakuru ya Konti',
+  sessionSecurity: 'Umutekano wa Sisitemu (Iminota 10)',
+  sessionSecurityDesc: 'Konti yawe isohoka mu buryo bwikora nyuma y\'iminota 10 udakora ikintu na kimwe kugira ngo amakuru yawe arindwe.',
+  inactivityTimeoutWarning: 'Uteganya gusohoka kubera kutagira icyo ukora mu minota 10.',
+  sessionExpiredDueToInactivity: 'Igihe cyawe cyarangiye kubera kutagira icyo ukora mu minota 10. Ongera winjire.',
+  stayActive: 'Komeza Kwinjira',
+  viewProfile: 'Reba Umwirondoro',
 };
 
 const en: Translations = {
@@ -718,6 +780,37 @@ const en: Translations = {
   fastSecureVerified: 'Fast, secure and verified listings across Rwanda',
   manageAccounts: 'Manage accounts, status, and granular permissions',
   searchUsers: 'Search by name, email, or phone...',
+  forgotPassword: 'Forgot Password?',
+  forgotPasswordSubtitle: 'Enter your email or phone number to receive a 6-digit reset code.',
+  resetPassword: 'Reset Password',
+  resetPasswordSubtitle: 'Enter the verification code and set a strong new password.',
+  sendResetCode: 'Send Verification Code',
+  resetCode: '6-Digit Verification Code',
+  enterResetCode: 'Enter 6-digit code',
+  codeSentNotice: 'A verification code has been sent. It will expire in 15 minutes.',
+  newPassword: 'New Password',
+  confirmPassword: 'Confirm New Password',
+  passwordsDoNotMatch: 'Passwords do not match',
+  passwordResetSuccess: 'Password reset successfully! You can now log in.',
+  passwordChangedSuccess: 'Your password has been changed successfully.',
+  backToLogin: 'Back to Login',
+  profile: 'Profile',
+  myProfile: 'My Profile',
+  profileOverview: 'Profile Overview',
+  personalInfo: 'Personal Information',
+  securitySettings: 'Security & Password',
+  changePassword: 'Change Password',
+  currentPassword: 'Current Password',
+  updateProfile: 'Update Profile',
+  profileUpdatedSuccess: 'Profile updated successfully.',
+  memberSince: 'Member since',
+  accountDetails: 'Account Details',
+  sessionSecurity: 'Session Security (10-Min Auto-Logout)',
+  sessionSecurityDesc: 'For your security, sessions automatically log out after 10 minutes of inactivity to protect sensitive platform operations.',
+  inactivityTimeoutWarning: 'You will be logged out in 60 seconds due to inactivity.',
+  sessionExpiredDueToInactivity: 'Your session has expired after 10 minutes of inactivity. Please log in again.',
+  stayActive: 'Stay Logged In',
+  viewProfile: 'View Profile',
 };
 
 const sw: Translations = {
@@ -957,6 +1050,37 @@ const sw: Translations = {
   fastSecureVerified: 'Orodha za haraka, salama na zilizothibitishwa kote Rwanda',
   manageAccounts: 'Simamia akaunti, hali na ruhusa maalum',
   searchUsers: 'Tafuta kwa jina, barua pepe au simu...',
+  forgotPassword: 'Umesahau Nenosiri?',
+  forgotPasswordSubtitle: 'Weka barua pepe au nambari yako ya simu kupokea nambari ya uthibitishaji.',
+  resetPassword: 'Weka Upya Nenosiri',
+  resetPasswordSubtitle: 'Weka nambari ya uthibitishaji na uchague nenosiri jipya.',
+  sendResetCode: 'Tuma Nambari ya Uthibitishaji',
+  resetCode: 'Nambari ya Uthibitishaji ya tarakimu 6',
+  enterResetCode: 'Weka tarakimu 6',
+  codeSentNotice: 'Nambari ya uthibitishaji imetumwa. Itaisha baada ya dakika 15.',
+  newPassword: 'Nenosiri Jipya',
+  confirmPassword: 'Thibitisha Nenosiri Jipya',
+  passwordsDoNotMatch: 'Manenosiri hayalingani',
+  passwordResetSuccess: 'Nenosiri limewekwa upya! Unaweza kuingia sasa.',
+  passwordChangedSuccess: 'Nenosiri lako limebadilishwa kwa mafanikio.',
+  backToLogin: 'Rudi Kwenye Kuingia',
+  profile: 'Wasifu',
+  myProfile: 'Wasifu Wangu',
+  profileOverview: 'Muhtasari wa Wasifu',
+  personalInfo: 'Taarifa Binafsi',
+  securitySettings: 'Usalama na Nenosiri',
+  changePassword: 'Badilisha Nenosiri',
+  currentPassword: 'Nenosiri la Sasa',
+  updateProfile: 'Sasisha Wasifu',
+  profileUpdatedSuccess: 'Wasifu umesasishwa kwa mafanikio.',
+  memberSince: 'Mwanachama tangu',
+  accountDetails: 'Maelezo ya Akaunti',
+  sessionSecurity: 'Usalama wa Kipindi (Kutoka Baada ya Dakika 10)',
+  sessionSecurityDesc: 'Kwa usalama wako, mfumo unakutoa kiotomatiki baada ya dakika 10 za kutotumika.',
+  inactivityTimeoutWarning: 'Utatolewa baada ya sekunde 60 kwa kutofanya shughuli yoyote.',
+  sessionExpiredDueToInactivity: 'Kipindi chako kimeisha baada ya dakika 10 za kutotumika. Tafadhali ingia tena.',
+  stayActive: 'Baki Ndani',
+  viewProfile: 'Tazama Wasifu',
 };
 
 export const translations: Record<LanguageCode, Translations> = { RW: rw, EN: en, SW: sw };

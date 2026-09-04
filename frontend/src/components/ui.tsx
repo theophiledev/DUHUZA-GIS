@@ -9,6 +9,7 @@ import {
   Lock,
   Sparkles,
   MapPin,
+  Eye,
 } from 'lucide-react';
 
 export type StatusRailType =
@@ -228,7 +229,7 @@ export function Button({
   disabled,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'accent';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'accent' | 'custom';
 }) {
   const variants = {
     primary: 'bg-[#0F766E] text-white hover:bg-[#0B5750] shadow-sm active:translate-y-px',
@@ -236,6 +237,7 @@ export function Button({
     danger: 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200',
     ghost: 'text-[#0F766E] hover:bg-teal-50 active:bg-teal-100',
     accent: 'bg-[#F59E0B] text-slate-950 font-bold hover:bg-amber-500 shadow-sm',
+    custom: '',
   };
 
   return (
@@ -339,13 +341,15 @@ export interface ReviewCardProps {
   ownerName?: string;
   ownerPhone?: string;
   internalNotes?: string;
-  submitterInfo?: string;
+  submitterInfo?: ReactNode;
   tags?: string[];
   imageUrl?: string;
   onApprove?: () => void;
   onReject?: () => void;
+  onInspect?: () => void;
   approveLabel?: string;
   rejectLabel?: string;
+  inspectLabel?: string;
   actionLoading?: boolean;
   extraActions?: ReactNode;
 }
@@ -367,8 +371,10 @@ export function ReviewCard({
   imageUrl,
   onApprove,
   onReject,
+  onInspect,
   approveLabel = 'Approve',
   rejectLabel = 'Reject',
+  inspectLabel = 'Inspect',
   actionLoading = false,
   extraActions,
 }: ReviewCardProps) {
@@ -396,7 +402,14 @@ export function ReviewCard({
           </div>
 
           <div>
-            <h3 className="font-heading text-base sm:text-lg font-bold text-[#16241F] line-clamp-1">{title}</h3>
+            <h3
+              onClick={onInspect}
+              className={`font-heading text-base sm:text-lg font-bold text-[#16241F] line-clamp-1 ${
+                onInspect ? 'cursor-pointer hover:text-[#0F766E] transition' : ''
+              }`}
+            >
+              {title}
+            </h3>
             {location && <p className="inline-flex items-center gap-1 text-xs text-[#5B6B66] mt-0.5"><MapPin size={14} strokeWidth={1.75} />{location}</p>}
           </div>
         </div>
@@ -411,8 +424,18 @@ export function ReviewCard({
       </div>
 
       {imageUrl && (
-        <div className="mt-3 overflow-hidden rounded-lg bg-gray-100 max-h-48">
+        <div
+          onClick={onInspect}
+          className={`mt-3 overflow-hidden rounded-lg bg-gray-100 max-h-48 relative ${
+            onInspect ? 'cursor-pointer' : ''
+          }`}
+        >
           <img src={imageUrl} alt={title} className="h-44 w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          {onInspect && (
+            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-xs">
+              <span className="inline-flex items-center gap-1"><Eye size={14} strokeWidth={2} />View Full Details</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -445,12 +468,23 @@ export function ReviewCard({
 
       {/* Bottom Bar & Actions */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
-        <div className="text-xs text-gray-400 font-mono-data">
-          {submitterInfo && <span>{submitterInfo}</span>}
+        <div className="text-xs text-gray-500 flex-1 min-w-[200px]">
+          {submitterInfo && <div>{submitterInfo}</div>}
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
           {extraActions}
+          {onInspect && (
+            <Button
+              variant="secondary"
+              onClick={onInspect}
+              disabled={actionLoading}
+              className="text-xs text-[#0F766E] border-teal-200 hover:bg-teal-50 min-h-[34px] px-3 font-semibold"
+            >
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              {inspectLabel}
+            </Button>
+          )}
           {onReject && (
             <Button
               variant="secondary"

@@ -54,17 +54,28 @@ export function Layout() {
             </select>
 
             {user ? (
-              <>
+              <div className="flex items-center gap-2">
                 <Link
                   to="/dashboard"
-                  className="hidden rounded-full bg-brand-active px-3 py-2 text-sm font-semibold text-brand-800 sm:inline-block"
+                  className="rounded-full bg-brand-active px-3 py-1.5 text-xs sm:text-sm font-semibold text-brand-800 hover:bg-emerald-100 transition"
                 >
                   {tr('dashboard')}
                 </Link>
-                <button type="button" onClick={logout} className="text-sm font-medium text-gray-500 hover:text-gray-800">
+                <Link
+                  to="/dashboard/profile"
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+                  title={tr('myProfile')}
+                >
+                  <span>{user.name}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="text-xs sm:text-sm font-medium text-gray-500 hover:text-red-700 transition px-1 py-1.5"
+                >
                   {tr('logout')}
                 </button>
-              </>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link to="/login" className="px-2 py-1.5 text-sm font-medium text-gray-600 hover:text-brand-700">

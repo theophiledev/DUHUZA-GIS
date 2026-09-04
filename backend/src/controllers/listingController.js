@@ -2,6 +2,7 @@ const { z } = require('zod');
 const prisma = require('../config/db');
 const { toPublicListing } = require('../utils/fieldVisibility');
 const { jitterCoordinates } = require('../utils/jitterLocation');
+const { sendSubmissionReceivedEmail } = require('../utils/emailService');
 
 const LISTING_INCLUDE = {
   translations: true,
@@ -100,6 +101,22 @@ async function submitListing(req, res) {
     });
     return l;
   });
+
+  // Dispatch submission confirmation email to agent
+  const agentUser = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (agentUser && agentUser.email) {
+    const listingWithTrans = await prisma.listing.findUnique({
+      where: { id: listing.id },
+      include: { translations: true },
+    });
+    const title = listingWithTrans?.translations?.[0]?.title || `Listing #${listing.id.slice(0, 8)}`;
+    sendSubmissionReceivedEmail({
+      to: agentUser.email,
+      name: agentUser.name,
+      itemType: 'Property Listing',
+      itemTitle: title,
+    }).catch((err) => console.error('[ListingController] Failed to send receipt email:', err.message));
+  }
 
   return res.json(updated);
 }

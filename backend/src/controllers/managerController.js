@@ -1,12 +1,17 @@
 const { z } = require('zod');
 const prisma = require('../config/db');
+const { sendStatusUpdateEmail } = require('../utils/emailService');
 
 const LISTING_INCLUDE = {
   translations: true,
   media: true,
   attributes: true,
   fieldVisibility: true,
-  agent: { select: { id: true, name: true, phone: true, email: true } },
+  agent: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
+  statusHistory: {
+    include: { changedBy: { select: { id: true, name: true, role: true } } },
+    orderBy: { changedAt: 'desc' },
+  },
 };
 
 // FR8: queue of pending listings — FULL fields, manager/admin only
@@ -19,13 +24,34 @@ async function pendingQueue(req, res) {
   return res.json(listings);
 }
 
-// FR9: approve
+// FR9: approve — optional approval comment (allows manager to provide feedback)
+const approveSchema = z.object({ comment: z.string().optional() });
 async function approveListing(req, res) {
-  const listing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+  const parsed = approveSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const listing = await prisma.listing.findUnique({
+    where: { id: req.params.id },
+    include: LISTING_INCLUDE,
+  });
   if (!listing) return res.status(404).json({ error: 'Listing not found' });
   if (listing.status !== 'PENDING_REVIEW') return res.status(409).json({ error: 'Not pending review' });
 
-  const updated = await changeStatus(listing, 'PUBLISHED', req.user.id, null);
+  const updated = await changeStatus(listing, 'PUBLISHED', req.user.id, parsed.data.comment || null);
+
+  // Send status email notification to agent
+  if (updated.agent && updated.agent.email) {
+    const title = updated.translations?.[0]?.title || `Property Listing #${updated.id.slice(0, 8)}`;
+    sendStatusUpdateEmail({
+      to: updated.agent.email,
+      name: updated.agent.name,
+      itemType: 'Property Listing',
+      itemTitle: title,
+      newStatus: 'PUBLISHED',
+      comment: parsed.data.comment || null,
+    }).catch((err) => console.error('[ManagerController] Failed to send approval email:', err.message));
+  }
+
   return res.json(updated);
 }
 
@@ -35,11 +61,28 @@ async function rejectListing(req, res) {
   const parsed = rejectSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Rejection comment is required (BR6)' });
 
-  const listing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+  const listing = await prisma.listing.findUnique({
+    where: { id: req.params.id },
+    include: LISTING_INCLUDE,
+  });
   if (!listing) return res.status(404).json({ error: 'Listing not found' });
   if (listing.status !== 'PENDING_REVIEW') return res.status(409).json({ error: 'Not pending review' });
 
   const updated = await changeStatus(listing, 'REJECTED', req.user.id, parsed.data.comment);
+
+  // Send status email notification to agent
+  if (updated.agent && updated.agent.email) {
+    const title = updated.translations?.[0]?.title || `Property Listing #${updated.id.slice(0, 8)}`;
+    sendStatusUpdateEmail({
+      to: updated.agent.email,
+      name: updated.agent.name,
+      itemType: 'Property Listing',
+      itemTitle: title,
+      newStatus: 'REJECTED',
+      comment: parsed.data.comment,
+    }).catch((err) => console.error('[ManagerController] Failed to send rejection email:', err.message));
+  }
+
   return res.json(updated);
 }
 
@@ -100,53 +143,132 @@ async function changeStatus(listing, newStatus, changedById, comment) {
 
 // ---------------------------------------------------------------
 // MARKET / SERVICES approval (BR12 — same gate as property, FR35/FR39)
-// Simpler than Listing: no ListingStatusHistory-equivalent table for
-// these lite models in MVP scope — add one later if an audit trail is
-// required here too (would mirror ListingStatusHistory's shape).
 // ---------------------------------------------------------------
 
 async function pendingMarketQueue(req, res) {
   const items = await prisma.marketItem.findMany({
     where: { status: 'PENDING_REVIEW' },
-    include: { media: true, seller: { select: { id: true, name: true, phone: true } } },
+    include: {
+      media: true,
+      seller: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
+    },
     orderBy: { createdAt: 'asc' },
   });
   return res.json(items);
 }
 
 async function approveMarketItem(req, res) {
-  const item = await prisma.marketItem.update({ where: { id: req.params.id }, data: { status: 'PUBLISHED' } });
+  const parsed = approveSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  
+  const item = await prisma.marketItem.update({ 
+    where: { id: req.params.id }, 
+    data: { status: 'PUBLISHED', approvalComment: parsed.data.comment || null },
+    include: {
+      seller: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (item.seller && item.seller.email) {
+    sendStatusUpdateEmail({
+      to: item.seller.email,
+      name: item.seller.name,
+      itemType: 'Marketplace Item',
+      itemTitle: item.title,
+      newStatus: 'PUBLISHED',
+      comment: parsed.data.comment || null,
+    }).catch((err) => console.error('[ManagerController] Failed to send market approval email:', err.message));
+  }
+
   return res.json(item);
 }
 
 async function rejectMarketItem(req, res) {
   const parsed = rejectSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Rejection comment is required (BR6)' });
-  // NOTE: comment not persisted for market items in this MVP scaffold —
-  // add a market_item_status_history table (mirroring listing_status_history)
-  // before relying on this for real moderation audit trails.
-  const item = await prisma.marketItem.update({ where: { id: req.params.id }, data: { status: 'REJECTED' } });
+  
+  const item = await prisma.marketItem.update({
+    where: { id: req.params.id },
+    data: { status: 'REJECTED', approvalComment: parsed.data.comment },
+    include: {
+      seller: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (item.seller && item.seller.email) {
+    sendStatusUpdateEmail({
+      to: item.seller.email,
+      name: item.seller.name,
+      itemType: 'Marketplace Item',
+      itemTitle: item.title,
+      newStatus: 'REJECTED',
+      comment: parsed.data.comment,
+    }).catch((err) => console.error('[ManagerController] Failed to send market rejection email:', err.message));
+  }
+
   return res.json(item);
 }
 
 async function pendingServicesQueue(req, res) {
   const providers = await prisma.serviceProvider.findMany({
     where: { status: 'PENDING_REVIEW' },
-    include: { user: { select: { id: true, name: true, phone: true } } },
+    include: {
+      user: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
+    },
     orderBy: { createdAt: 'asc' },
   });
   return res.json(providers);
 }
 
 async function approveServiceProvider(req, res) {
-  const provider = await prisma.serviceProvider.update({ where: { id: req.params.id }, data: { status: 'PUBLISHED' } });
+  const parsed = approveSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  
+  const provider = await prisma.serviceProvider.update({ 
+    where: { id: req.params.id }, 
+    data: { status: 'PUBLISHED', approvalComment: parsed.data.comment || null },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (provider.user && provider.user.email) {
+    sendStatusUpdateEmail({
+      to: provider.user.email,
+      name: provider.user.name,
+      itemType: 'Service Provider Profile',
+      itemTitle: `${provider.user.name} (${provider.category})`,
+      newStatus: 'PUBLISHED',
+      comment: parsed.data.comment || null,
+    }).catch((err) => console.error('[ManagerController] Failed to send service approval email:', err.message));
+  }
+
   return res.json(provider);
 }
 
 async function rejectServiceProvider(req, res) {
   const parsed = rejectSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Rejection comment is required (BR6)' });
-  const provider = await prisma.serviceProvider.update({ where: { id: req.params.id }, data: { status: 'REJECTED' } });
+
+  const provider = await prisma.serviceProvider.update({
+    where: { id: req.params.id },
+    data: { status: 'REJECTED', approvalComment: parsed.data.comment },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (provider.user && provider.user.email) {
+    sendStatusUpdateEmail({
+      to: provider.user.email,
+      name: provider.user.name,
+      itemType: 'Service Provider Profile',
+      itemTitle: `${provider.user.name} (${provider.category})`,
+      newStatus: 'REJECTED',
+      comment: parsed.data.comment,
+    }).catch((err) => console.error('[ManagerController] Failed to send service rejection email:', err.message));
+  }
+
   return res.json(provider);
 }
 
@@ -158,8 +280,8 @@ async function pendingGisQueue(req, res) {
   const requests = await prisma.gisRequest.findMany({
     where: { status: { in: ['REQUESTED', 'ASSIGNED', 'IN_PROGRESS'] } },
     include: {
-      client: { select: { id: true, name: true, phone: true } },
-      assignedAgent: { select: { id: true, name: true, phone: true } },
+      client: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
+      assignedAgent: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
     },
     orderBy: { createdAt: 'asc' },
   });
@@ -180,7 +302,24 @@ async function assignGisRequest(req, res) {
   const updated = await prisma.gisRequest.update({
     where: { id: req.params.id },
     data: { assignedAgentId: agent.id, status: 'ASSIGNED' },
+    include: {
+      client: { select: { id: true, name: true, phone: true, email: true } },
+      assignedAgent: { select: { id: true, name: true, phone: true, email: true } },
+    },
   });
+
+  // Notify assigned agent & client via email if email exists
+  if (agent.email) {
+    sendStatusUpdateEmail({
+      to: agent.email,
+      name: agent.name,
+      itemType: 'Cadastral Survey Assignment',
+      itemTitle: `GIS Mission: ${updated.purpose}`,
+      newStatus: 'ASSIGNED',
+      comment: `You have been assigned to survey coordinates (${updated.parcelLat}, ${updated.parcelLng}) for client ${updated.client?.name || 'Client'}.`,
+    }).catch((err) => console.error('[ManagerController] Failed to send GIS assignment email:', err.message));
+  }
+
   return res.json(updated);
 }
 
@@ -191,18 +330,41 @@ async function assignGisRequest(req, res) {
 async function pendingJobsQueue(req, res) {
   const jobs = await prisma.job.findMany({
     where: { status: 'PENDING_REVIEW' },
-    include: { employer: { select: { id: true, name: true, phone: true } } },
+    include: {
+      employer: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
+    },
     orderBy: { createdAt: 'asc' },
   });
   return res.json(jobs);
 }
 
 async function approveJob(req, res) {
+  const parsed = approveSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
   const job = await prisma.job.findUnique({ where: { id: req.params.id } });
   if (!job) return res.status(404).json({ error: 'Job not found' });
   if (job.status !== 'PENDING_REVIEW') return res.status(409).json({ error: 'Not pending review' });
 
-  const updated = await prisma.job.update({ where: { id: req.params.id }, data: { status: 'PUBLISHED' } });
+  const updated = await prisma.job.update({ 
+    where: { id: req.params.id }, 
+    data: { status: 'PUBLISHED', approvalComment: parsed.data.comment || null },
+    include: {
+      employer: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (updated.employer && updated.employer.email) {
+    sendStatusUpdateEmail({
+      to: updated.employer.email,
+      name: updated.employer.name,
+      itemType: 'Job Vacancy',
+      itemTitle: updated.title,
+      newStatus: 'PUBLISHED',
+      comment: parsed.data.comment || null,
+    }).catch((err) => console.error('[ManagerController] Failed to send job approval email:', err.message));
+  }
+
   return res.json(updated);
 }
 
@@ -214,7 +376,25 @@ async function rejectJob(req, res) {
   if (!job) return res.status(404).json({ error: 'Job not found' });
   if (job.status !== 'PENDING_REVIEW') return res.status(409).json({ error: 'Not pending review' });
 
-  const updated = await prisma.job.update({ where: { id: req.params.id }, data: { status: 'REJECTED' } });
+  const updated = await prisma.job.update({
+    where: { id: req.params.id },
+    data: { status: 'REJECTED', approvalComment: parsed.data.comment },
+    include: {
+      employer: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (updated.employer && updated.employer.email) {
+    sendStatusUpdateEmail({
+      to: updated.employer.email,
+      name: updated.employer.name,
+      itemType: 'Job Vacancy',
+      itemTitle: updated.title,
+      newStatus: 'REJECTED',
+      comment: parsed.data.comment,
+    }).catch((err) => console.error('[ManagerController] Failed to send job rejection email:', err.message));
+  }
+
   return res.json(updated);
 }
 

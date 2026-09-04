@@ -20,10 +20,7 @@ import {
   ChevronRight,
   LogOut,
   User as UserIcon,
-  Globe,
 } from 'lucide-react';
-import { languageLabels } from '../i18n/translations';
-import type { LanguageCode } from '../types';
 
 export interface DashboardNavItem {
   to: string;
@@ -49,7 +46,7 @@ export function DashboardLayout({
   navItems,
 }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
-  const { lang, setLang, tr } = useLanguage();
+  const { tr } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -97,6 +94,8 @@ export function DashboardLayout({
 
   if (!user) return null;
 
+  const firstName = user.name ? user.name.trim().split(' ')[0] : user.name;
+
   // 3. Information Architecture & Nav Definitions Per Role
   const roleConfig: Record<
     Role,
@@ -120,6 +119,7 @@ export function DashboardLayout({
         { to: '/dashboard/admin/users', label: tr('users'), icon: Users },
         { to: '/dashboard/admin/users/new', label: tr('createUser'), icon: UserPlus },
         { to: '/dashboard/manager', label: tr('moderationHub'), icon: ShieldCheck },
+        { to: '/dashboard/profile', label: tr('myProfile'), icon: UserIcon },
       ],
     },
     MANAGER: {
@@ -135,6 +135,7 @@ export function DashboardLayout({
         { to: '/dashboard/manager/market', label: tr('market'), icon: ShoppingBag },
         { to: '/dashboard/manager/services', label: tr('services'), icon: Wrench },
         { to: '/dashboard/manager/jobs', label: tr('jobs'), icon: Briefcase },
+        { to: '/dashboard/profile', label: tr('myProfile'), icon: UserIcon },
       ],
     },
     AGENT: {
@@ -148,6 +149,7 @@ export function DashboardLayout({
         { to: '/dashboard/agent/listings', label: tr('myListings'), icon: Home },
         { to: '/dashboard/agent/listings/new', label: tr('createListing'), icon: PlusCircle },
         { to: '/dashboard/agent/gis', label: tr('assignedGis'), icon: MapPin },
+        { to: '/dashboard/profile', label: tr('myProfile'), icon: UserIcon },
       ],
     },
     CLIENT: {
@@ -163,13 +165,13 @@ export function DashboardLayout({
         { to: '/dashboard/client/applications', label: tr('myApplications'), icon: FileText },
         { to: '/dashboard/client/gis', label: tr('gisRequest'), icon: MapPin },
         { to: '/dashboard/client/services', label: tr('serviceProvider'), icon: Wrench },
+        { to: '/dashboard/profile', label: tr('myProfile'), icon: UserIcon },
       ],
     },
   };
 
   const currentRole = roleConfig[user.role] ?? roleConfig.CLIENT;
   const navList = navItems || currentRole.defaultNav;
-  const RoleIcon = currentRole.icon;
 
   const handleLogout = async () => {
     await logout();
@@ -187,42 +189,7 @@ export function DashboardLayout({
         }`}
         aria-label="Sidebar Navigation"
       >
-        {/* Brand & Logo Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#E2E8E6]">
-          <Link to="/" className="flex items-center gap-3 overflow-hidden">
-            <img src="/LOGO.png" alt="Duhuza" className="h-8 w-auto shrink-0" />
-            {!isSidebarCollapsed && (
-              <span className="font-heading font-extrabold text-lg text-[#0F766E] tracking-tight truncate">
-                Duhuza
-              </span>
-            )}
-          </Link>
-        </div>
-
-        {/* Role Pill Header */}
-        {!isSidebarCollapsed ? (
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/70">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${currentRole.badgeBg}`}
-              >
-                <RoleIcon className="h-3 w-3" />
-                <span>{currentRole.label}</span>
-              </span>
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {user.isActive ? tr('active') : tr('suspended')}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 font-medium truncate mt-1">{user.name}</p>
-          </div>
-        ) : (
-          <div className="py-2.5 flex justify-center border-b border-gray-100 bg-gray-50/70" title={`${currentRole.label} (${user.name})`}>
-            <span className={`inline-flex p-1.5 rounded-full border ${currentRole.badgeBg}`}>
-              <RoleIcon className="h-3.5 w-3.5" />
-            </span>
-          </div>
-        )}
+       
 
         {/* Navigation Items List */}
         <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1.5 scrollbar-thin">
@@ -261,27 +228,6 @@ export function DashboardLayout({
 
         {/* Sidebar Footer Controls */}
         <div className="p-3 border-t border-[#E2E8E6] bg-gray-50/50 space-y-2">
-          {/* Language Switcher */}
-          {!isSidebarCollapsed ? (
-            <div className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-gray-600">
-              <span className="flex items-center gap-1.5">
-                <Globe className="h-3.5 w-3.5 text-gray-400" />
-                <span>{tr('language')}</span>
-              </span>
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as LanguageCode)}
-                className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-700 focus:border-[#0F766E] focus:outline-none"
-              >
-                {(Object.keys(languageLabels) as LanguageCode[]).map((l) => (
-                  <option key={l} value={l}>
-                    {languageLabels[l]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
           {/* Logout Action */}
           <button
             type="button"
@@ -326,11 +272,8 @@ export function DashboardLayout({
           </Link>
 
           <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${currentRole.badgeBg}`}
-            >
-              <RoleIcon className="h-3 w-3" />
-              <span>{currentRole.label}</span>
+            <span className="text-xs font-semibold text-gray-700">
+              {tr('welcomeBack')}, <strong className="text-[#0F766E]">{firstName}</strong>
             </span>
 
             {/* Mobile Profile & Language Trigger */}
@@ -350,28 +293,14 @@ export function DashboardLayout({
                     <p className="text-[10px] text-gray-500 truncate">{user.email || user.phone || '—'}</p>
                   </div>
                   <div className="py-1">
-                    <div className="px-3 py-1.5 flex items-center justify-between text-xs text-gray-600">
-                      <span>{tr('language')}</span>
-                      <select
-                        value={lang}
-                        onChange={(e) => setLang(e.target.value as LanguageCode)}
-                        className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-xs text-gray-700"
-                      >
-                        {(Object.keys(languageLabels) as LanguageCode[]).map((l) => (
-                          <option key={l} value={l}>
-                            {languageLabels[l]}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 mt-1"
+                    <Link
+                      to="/dashboard/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full text-left px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-teal-50 hover:text-[#0F766E] rounded-lg flex items-center gap-2 transition"
                     >
-                      <LogOut className="h-3.5 w-3.5" />
-                      <span>{tr('logout')}</span>
-                    </button>
+                      <UserIcon className="h-3.5 w-3.5 text-gray-400" />
+                      <span>{tr('myProfile')}</span>
+                    </Link>
                   </div>
                 </div>
               )}
@@ -393,18 +322,9 @@ export function DashboardLayout({
             <div className="absolute left-1/4 bottom-0 -mb-10 h-40 w-40 rounded-full bg-teal-400/20 blur-xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur-md ${currentRole.badgeBg}`}
-                  >
-                    <RoleIcon className="h-3.5 w-3.5" />
-                    <span>{currentRole.label}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-xs text-white/90 backdrop-blur-md">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {user.isActive ? tr('active') : tr('suspended')}
-                  </span>
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/95 backdrop-blur-md">
+                  <span>{tr('welcomeBack')}, <strong className="text-white font-bold">{firstName}</strong></span>
                 </div>
                 <h1 className="font-heading text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                   {title}
@@ -412,18 +332,11 @@ export function DashboardLayout({
                 {subtitle && <p className="text-sm sm:text-base text-gray-200/90 max-w-2xl">{subtitle}</p>}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md">
-                  <div className="text-[11px] text-gray-300 uppercase tracking-wider">{tr('name')}</div>
-                  <div className="text-sm font-bold text-white truncate max-w-[200px]">
-                    {user.name}
-                  </div>
-                  <div className="text-[11px] text-gray-300 font-mono truncate max-w-[200px]">
-                    {user.email || user.phone || '—'}
-                  </div>
+              {actions && (
+                <div className="flex flex-wrap items-center gap-3">
+                  {actions}
                 </div>
-                {actions}
-              </div>
+              )}
             </div>
           </div>
 

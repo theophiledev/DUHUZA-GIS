@@ -7,9 +7,10 @@ import { JobCardSkeletonGrid } from '../components/SkeletonLoaders';
 import { Card, EmptyState, PageHeader } from '../components/ui';
 import { SmartImage } from '../components/SmartImage';
 import { Pagination } from '../components/Pagination';
+import { ReviewsAndComments } from '../components/ReviewsAndComments';
 import { useLanguage } from '../context/LanguageContext';
 import type { ServiceProvider } from '../types';
-import { MapPin } from 'lucide-react';
+import { MapPin, Star, MessageSquare, X } from 'lucide-react';
 
 function getServiceImage(category: string) {
   const cat = (category || '').toLowerCase();
@@ -30,6 +31,9 @@ export function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   const [filters, setFilters] = useState({ category: '', district: '' });
+
+  // Reviews modal for selected provider
+  const [selectedProviderForReviews, setSelectedProviderForReviews] = useState<ServiceProvider | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -108,7 +112,13 @@ export function ServicesPage() {
                 </div>
 
                 <div className="flex flex-1 flex-col p-5 space-y-3">
-                  <h3 className="font-bold text-gray-900 text-base">{p.user?.name || 'Verified Provider'}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold text-gray-900 text-base">{p.user?.name || 'Verified Provider'}</h3>
+                    <div className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      <span>5.0</span>
+                    </div>
+                  </div>
 
                   <p className="text-xs text-gray-500">
                     <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />Coverage: {p.coverageDistrict || 'Rwanda'}</span>
@@ -118,7 +128,16 @@ export function ServicesPage() {
                     {p.description}
                   </p>
 
-                  <div className="pt-2 border-t border-gray-100">
+                  <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProviderForReviews(p)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50/70 py-1.5 text-xs font-bold text-[#0F766E] hover:bg-teal-100 transition"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      <span>View Reviews & Ratings</span>
+                    </button>
+
                     <WhatsAppButton
                       label={tr('contactWhatsapp')}
                       fetchUrl={() => getServiceWhatsapp(p.id)}
@@ -141,6 +160,41 @@ export function ServicesPage() {
             pageSizeOptions={[6, 12, 24, 48]}
             itemLabel={tr('services').toLowerCase()}
           />
+        </div>
+      )}
+
+      {/* Service Provider Reviews Modal */}
+      {selectedProviderForReviews && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-gray-900">
+                  {selectedProviderForReviews.user?.name || 'Service Provider'}
+                </h3>
+                <p className="text-xs text-gray-500 capitalize">{selectedProviderForReviews.category} • Coverage: {selectedProviderForReviews.coverageDistrict || 'Rwanda'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProviderForReviews(null)}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <ReviewsAndComments
+              itemId={selectedProviderForReviews.id}
+              itemType="service"
+              itemTitle={selectedProviderForReviews.user?.name || selectedProviderForReviews.category}
+              approvalComment={selectedProviderForReviews.approvalComment || undefined}
+            />
+          </div>
         </div>
       )}
     </div>

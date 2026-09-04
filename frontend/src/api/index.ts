@@ -25,6 +25,42 @@ export const register = (data: {
   preferredLanguage?: LanguageCode;
 }) => api<AuthResponse>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }, false);
 
+export const forgotPassword = (identifier: string) =>
+  api<{ message: string; identifier?: string; expiresInMinutes?: number; resetCode?: string }>(
+    '/api/auth/forgot-password',
+    { method: 'POST', body: JSON.stringify({ identifier }) },
+    false
+  );
+
+export const verifyResetCode = (identifier: string, code: string) =>
+  api<{ valid: boolean; message: string }>(
+    '/api/auth/verify-reset-code',
+    { method: 'POST', body: JSON.stringify({ identifier, code }) },
+    false
+  );
+
+export const resetPassword = (identifier: string, code: string, newPassword: string) =>
+  api<{ message: string }>(
+    '/api/auth/reset-password',
+    { method: 'POST', body: JSON.stringify({ identifier, code, newPassword }) },
+    false
+  );
+
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  api<{ message: string }>(
+    '/api/auth/change-password',
+    { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }
+  );
+
+export const getProfile = () =>
+  api<{ user: User; counts?: Record<string, number> }>('/api/auth/profile');
+
+export const updateProfile = (data: { name?: string; phone?: string; preferredLanguage?: LanguageCode }) =>
+  api<{ user: User; message: string }>('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+
 // Listings (public)
 export const searchListings = (params: Record<string, string>, lang: LanguageCode) =>
   api<PublicListing[]>(`/api/listings${qs({ ...params, lang })}`, {}, false);
@@ -109,8 +145,11 @@ export const updateGisProgress = (id: string, data: Record<string, unknown>) =>
 
 // Manager
 export const pendingListings = () => api<InternalListing[]>('/api/manager/listings/pending');
-export const approveListing = (id: string) =>
-  api<InternalListing>(`/api/manager/listings/${id}/approve`, { method: 'POST' });
+export const approveListing = (id: string, comment?: string) =>
+  api<InternalListing>(`/api/manager/listings/${id}/approve`, {
+    method: 'POST',
+    body: comment ? JSON.stringify({ comment }) : undefined,
+  });
 export const rejectListing = (id: string, comment: string) =>
   api<InternalListing>(`/api/manager/listings/${id}/reject`, {
     method: 'POST',
@@ -118,8 +157,11 @@ export const rejectListing = (id: string, comment: string) =>
   });
 
 export const pendingMarket = () => api<MarketItem[]>('/api/manager/market/pending');
-export const approveMarket = (id: string) =>
-  api<MarketItem>(`/api/manager/market/${id}/approve`, { method: 'POST' });
+export const approveMarket = (id: string, comment?: string) =>
+  api<MarketItem>(`/api/manager/market/${id}/approve`, {
+    method: 'POST',
+    body: comment ? JSON.stringify({ comment }) : undefined,
+  });
 export const rejectMarket = (id: string, comment: string) =>
   api<MarketItem>(`/api/manager/market/${id}/reject`, {
     method: 'POST',
@@ -130,8 +172,11 @@ export const pendingServices = () =>
   api<(ServiceProvider & { user: { id: string; name: string; phone?: string } })[]>(
     '/api/manager/services/pending'
   );
-export const approveService = (id: string) =>
-  api<ServiceProvider>(`/api/manager/services/${id}/approve`, { method: 'POST' });
+export const approveService = (id: string, comment?: string) =>
+  api<ServiceProvider>(`/api/manager/services/${id}/approve`, {
+    method: 'POST',
+    body: comment ? JSON.stringify({ comment }) : undefined,
+  });
 export const rejectService = (id: string, comment: string) =>
   api<ServiceProvider>(`/api/manager/services/${id}/reject`, {
     method: 'POST',
@@ -147,8 +192,11 @@ export const assignGis = (id: string, agentId: string) =>
 
 export const pendingJobs = () =>
   api<(Job & { employer: { id: string; name: string; phone?: string } })[]>('/api/manager/jobs/pending');
-export const approveJob = (id: string) =>
-  api<Job>(`/api/manager/jobs/${id}/approve`, { method: 'POST' });
+export const approveJob = (id: string, comment?: string) =>
+  api<Job>(`/api/manager/jobs/${id}/approve`, {
+    method: 'POST',
+    body: comment ? JSON.stringify({ comment }) : undefined,
+  });
 export const rejectJob = (id: string, comment: string) =>
   api<Job>(`/api/manager/jobs/${id}/reject`, {
     method: 'POST',

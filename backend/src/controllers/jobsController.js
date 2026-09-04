@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../config/db');
+const { sendSubmissionReceivedEmail } = require('../utils/emailService');
 
 // Jobs module (Phase 3 — FR26-FR28)
 // Clients post jobs; managers approve; other clients apply.
@@ -25,6 +26,17 @@ async function createJob(req, res) {
       status: 'PENDING_REVIEW',
     },
   });
+
+  // Dispatch receipt email
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (user && user.email) {
+    sendSubmissionReceivedEmail({
+      to: user.email,
+      name: user.name,
+      itemType: 'Job Vacancy',
+      itemTitle: job.title,
+    }).catch((err) => console.error('[JobsController] Failed to send receipt email:', err.message));
+  }
 
   return res.status(201).json(job);
 }

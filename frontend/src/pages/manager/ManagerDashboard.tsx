@@ -30,6 +30,7 @@ import {
 } from '../../components/ui';
 import { showToast } from '../../components/Toast';
 import { useLanguage } from '../../context/LanguageContext';
+import { ManagerItemDetailModal, type ManagerItemDetailData } from '../../components/ManagerItemDetailModal';
 import type { AdminUser, GisRequest, InternalListing, Job, MarketItem, ServiceProvider } from '../../types';
 import {
   Home,
@@ -43,9 +44,12 @@ import {
   RotateCw,
   Clock,
   ArrowRight,
+  MessageSquare,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 
-type VerticalTab = 'listings' | 'gis' | 'market' | 'services' | 'jobs';
+type VerticalTab = 'listings' | 'gis' | 'market' | 'services' | 'jobs' | 'comments';
 
 function getServiceSampleImage(category: string) {
   const cat = (category || '').toLowerCase();
@@ -84,8 +88,33 @@ export function ManagerDashboard() {
   const [jobs, setJobs] = useState<(Job & { employer: { id: string; name: string; phone?: string } })[]>([]);
   const [agents, setAgents] = useState<AdminUser[]>([]);
 
+  // Approval comments aggregated from all verticals
+  const approvalComments = useMemo(() => {
+    const items: {
+      id: string;
+      type: string;
+      title: string;
+      comment: string;
+      status: string;
+    }[] = [];
+    listings.forEach(() => {
+      // comments in status history aren't loaded here; show published items with comments via right column link
+    });
+    marketItems.forEach((m) => {
+      if (m.approvalComment) items.push({ id: m.id, type: 'Market Item', title: m.title, comment: m.approvalComment, status: m.status });
+    });
+    serviceProviders.forEach((s) => {
+      if (s.approvalComment) items.push({ id: s.id, type: 'Service', title: s.category, comment: s.approvalComment, status: s.status });
+    });
+    jobs.forEach((j) => {
+      if (j.approvalComment) items.push({ id: j.id, type: 'Job', title: j.title, comment: j.approvalComment, status: j.status });
+    });
+    return items;
+  }, [listings, marketItems, serviceProviders, jobs]);
+
   // Action states
   const [selectedAgentForGis, setSelectedAgentForGis] = useState<Record<string, string>>({});
+  const [detailModalItem, setDetailModalItem] = useState<ManagerItemDetailData | null>(null);
   const [rejectDialog, setRejectDialog] = useState<{
     open: boolean;
     type: VerticalTab;
@@ -223,6 +252,144 @@ export function ManagerDashboard() {
     }
   };
 
+  // Detailed Modal Inspection Mappers
+  const openListingDetail = (l: InternalListing) => {
+    setDetailModalItem({
+      id: l.id,
+      type: 'listing',
+      typeLabel: 'Property Listing',
+      title: l.translations?.[0]?.title || `Listing #${l.id.slice(0, 8)}`,
+      status: l.status,
+      category: l.category,
+      listingType: l.listingType,
+      price: l.price,
+      currency: l.currency,
+      description: l.translations?.[0]?.description,
+      district: l.district,
+      sector: l.sector,
+      cell: l.cell,
+      village: l.village,
+      publicLat: l.publicLat,
+      publicLng: l.publicLng,
+      privateLat: l.privateLat,
+      privateLng: l.privateLng,
+      ownerName: l.ownerName,
+      ownerPhone: l.ownerPhone,
+      internalNotes: l.internalNotes,
+      createdAt: l.createdAt,
+      media: l.media,
+      attributes: l.attributes,
+      translations: l.translations,
+      submitter: l.agent,
+    });
+  };
+
+  const openMarketDetail = (m: MarketItem) => {
+    setDetailModalItem({
+      id: m.id,
+      type: 'market',
+      typeLabel: 'Isoko Marketplace Item',
+      title: m.title,
+      status: m.status,
+      category: m.category,
+      price: m.price,
+      currency: m.currency,
+      description: m.description,
+      district: m.district,
+      sector: m.sector,
+      createdAt: m.createdAt,
+      media: m.media,
+      submitter: m.seller,
+    });
+  };
+
+  const openServiceDetail = (s: ServiceProvider) => {
+    setDetailModalItem({
+      id: s.id,
+      type: 'service',
+      typeLabel: 'Service Provider Profile',
+      title: s.user?.name ? `${s.user.name} (${s.category})` : s.category,
+      status: s.status,
+      category: s.category,
+      description: s.description,
+      rateInfo: s.rateInfo,
+      coverageDistrict: s.coverageDistrict,
+      coverageSector: s.coverageSector,
+      createdAt: s.createdAt,
+      submitter: s.user,
+    });
+  };
+
+  const openJobDetail = (j: Job) => {
+    setDetailModalItem({
+      id: j.id,
+      type: 'job',
+      typeLabel: 'Job Vacancy',
+      title: j.title,
+      status: j.status,
+      location: j.location,
+      salaryRange: j.salaryRange,
+      deadline: j.deadline,
+      description: j.description,
+      createdAt: j.createdAt,
+      submitter: j.employer,
+    });
+  };
+
+  const openGisDetail = (g: GisRequest) => {
+    setDetailModalItem({
+      id: g.id,
+      type: 'gis',
+      typeLabel: 'GIS Cadastral Survey Mission',
+      title: g.purpose,
+      status: g.status,
+      publicLat: g.parcelLat,
+      publicLng: g.parcelLng,
+      createdAt: g.createdAt,
+      submitter: g.client,
+      assignedAgent: g.assignedAgent,
+      reportUrl: g.reportUrl,
+    });
+  };
+
+  const handleDetailApprove = async (id: string, comment?: string) => {
+    if (!detailModalItem) return;
+    setActionLoading(true);
+    try {
+      if (detailModalItem.type === 'listing') await approveListing(id, comment);
+      else if (detailModalItem.type === 'market') await approveMarket(id, comment);
+      else if (detailModalItem.type === 'service') await approveService(id, comment);
+      else if (detailModalItem.type === 'job') await approveJob(id, comment);
+
+      showToast(`${detailModalItem.typeLabel} approved and published!`, 'success');
+      setDetailModalItem(null);
+      loadAll();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : tr('error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDetailReject = async (id: string, comment: string) => {
+    if (!detailModalItem) return;
+    setActionLoading(true);
+    try {
+      if (detailModalItem.type === 'listing') await rejectListing(id, comment);
+      else if (detailModalItem.type === 'market') await rejectMarket(id, comment);
+      else if (detailModalItem.type === 'service') await rejectService(id, comment);
+      else if (detailModalItem.type === 'job') await rejectJob(id, comment);
+
+      showToast(`${detailModalItem.typeLabel} rejected and feedback logged.`, 'info');
+      setDetailModalItem(null);
+      loadAll();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : tr('error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const totalPending =
     listings.length +
     gisRequests.length +
@@ -341,7 +508,7 @@ export function ManagerDashboard() {
         {/* LEFT COLUMN: Main Moderation Queue Stream (8 cols) */}
         <div className="space-y-5 lg:col-span-8">
           {/* Vertical Selector Tabs */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             <button
               type="button"
               onClick={() => setActiveTab('listings')}
@@ -456,6 +623,28 @@ export function ManagerDashboard() {
                 {jobs.length}
               </span>
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('comments')}
+              className={`flex flex-col rounded-xl border p-3 text-left transition-all ${
+                activeTab === 'comments'
+                  ? 'border-rose-600 bg-rose-50/60 shadow-sm ring-2 ring-rose-500/20'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-600 flex items-center gap-1">
+                  <MessageSquare className="h-3.5 w-3.5 text-rose-600" />
+                  Comments
+                </span>
+                <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800">
+                  {approvalComments.length}
+                </span>
+              </div>
+              <span className="mt-1 font-heading text-lg font-extrabold text-gray-900">
+                {approvalComments.length}
+              </span>
+            </button>
           </div>
 
           {/* Queue Stream Header */}
@@ -467,6 +656,7 @@ export function ManagerDashboard() {
                 {activeTab === 'market' && `Isoko Marketplace Queue (${filteredMarket.length})`}
                 {activeTab === 'services' && `Service Providers Queue (${filteredServices.length})`}
                 {activeTab === 'jobs' && `Job Postings Queue (${filteredJobs.length})`}
+                {activeTab === 'comments' && `Approval Comments Log (${approvalComments.length})`}
               </h3>
               {searchQuery && (
                 <p className="text-xs text-gray-500">Filtered by &ldquo;{searchQuery}&rdquo;</p>
@@ -512,7 +702,23 @@ export function ManagerDashboard() {
                             ownerName={l.ownerName}
                             ownerPhone={l.ownerPhone}
                             internalNotes={l.internalNotes}
-                            submitterInfo={`Agent: ${l.agentId.slice(0, 8)}...`}
+                            submitterInfo={
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-100 text-[#0F766E] font-bold text-xs">
+                                  {l.agent?.name ? l.agent.name.charAt(0).toUpperCase() : 'A'}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-gray-900 text-xs flex items-center gap-1.5">
+                                    <span>{l.agent?.name || 'Agent'}</span>
+                                    <span className="rounded bg-teal-50 px-1 py-0.2 text-[10px] font-bold text-[#0F766E]">AGENT</span>
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 font-mono-data">
+                                    {l.agent?.phone || l.agent?.email || `ID: ${l.agentId.slice(0, 8)}`}
+                                  </div>
+                                </div>
+                              </div>
+                            }
+                            onInspect={() => openListingDetail(l)}
                             onApprove={() => handleApproveListing(l.id)}
                             onReject={() => openRejectDialog('listings', l.id, title)}
                             actionLoading={actionLoading}
@@ -540,14 +746,34 @@ export function ManagerDashboard() {
                                 <span className="text-xs font-mono-data text-gray-400">ID: {r.id.slice(0, 8)}</span>
                               </div>
                               <h4 className="font-heading font-bold text-gray-900 mt-1.5 text-base">{r.purpose}</h4>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                Client: <span className="font-semibold text-gray-800">{r.client?.name}</span> ({r.client?.phone || '—'})
-                              </p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">
+                                  {r.client?.name ? r.client.name.charAt(0).toUpperCase() : 'C'}
+                                </div>
+                                <div className="text-xs">
+                                  <div className="font-semibold text-gray-900 flex items-center gap-1.5">
+                                    <span>{r.client?.name || 'Client'}</span>
+                                    <span className="rounded bg-emerald-50 px-1 py-0.2 text-[10px] font-bold text-emerald-800">CLIENT</span>
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 font-mono-data">
+                                    {r.client?.phone || r.client?.email || '—'}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-mono-data font-bold text-emerald-800">
+                            <div className="text-right space-y-2">
+                              <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-mono-data font-bold text-emerald-800 inline-block">
                                 <span className="inline-flex items-center gap-1"><MapPin size={14} strokeWidth={1.75} />{r.parcelLat}, {r.parcelLng}</span>
                               </span>
+                              <div>
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => openGisDetail(r)}
+                                  className="text-xs text-[#0F766E] border-teal-200 hover:bg-teal-50 px-2.5 py-1"
+                                >
+                                  Inspect Details
+                                </Button>
+                              </div>
                             </div>
                           </div>
 
@@ -611,7 +837,23 @@ export function ManagerDashboard() {
                           currency={item.currency}
                           description={item.description}
                           imageUrl={item.media?.[0]?.url}
-                          submitterInfo={`Seller: ${item.seller?.name || '—'} (${item.seller?.phone || '—'})`}
+                          submitterInfo={
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-800 font-bold text-xs">
+                                {item.seller?.name ? item.seller.name.charAt(0).toUpperCase() : 'S'}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900 text-xs flex items-center gap-1.5">
+                                  <span>{item.seller?.name || 'Seller'}</span>
+                                  <span className="rounded bg-amber-50 px-1 py-0.2 text-[10px] font-bold text-amber-800">SELLER</span>
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-mono-data">
+                                  {item.seller?.phone || item.seller?.email || '—'}
+                                </div>
+                              </div>
+                            </div>
+                          }
+                          onInspect={() => openMarketDetail(item)}
                           onApprove={() => handleApproveMarket(item.id)}
                           onReject={() => openRejectDialog('market', item.id, item.title)}
                           actionLoading={actionLoading}
@@ -640,8 +882,24 @@ export function ManagerDashboard() {
                           tags={p.rateInfo ? [p.rateInfo] : undefined}
                           description={p.description}
                           imageUrl={getServiceSampleImage(p.category)}
-                          submitterInfo={`Phone: ${p.user?.phone || '—'}`}
+                          submitterInfo={
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-800 font-bold text-xs">
+                                {p.user?.name ? p.user.name.charAt(0).toUpperCase() : 'P'}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900 text-xs flex items-center gap-1.5">
+                                  <span>{p.user?.name || 'Provider'}</span>
+                                  <span className="rounded bg-purple-50 px-1 py-0.2 text-[10px] font-bold text-purple-800">PROVIDER</span>
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-mono-data">
+                                  {p.user?.phone || p.user?.email || '—'}
+                                </div>
+                              </div>
+                            </div>
+                          }
                           approveLabel="Verify & Approve"
+                          onInspect={() => openServiceDetail(p)}
                           onApprove={() => handleApproveService(p.id)}
                           onReject={() => openRejectDialog('services', p.id, `${p.user?.name} (${p.category})`)}
                           actionLoading={actionLoading}
@@ -669,11 +927,57 @@ export function ManagerDashboard() {
                           tags={job.salaryRange ? [job.salaryRange] : undefined}
                           description={job.description}
                           imageUrl={getJobSampleImage(job.title)}
-                          submitterInfo={`Employer: ${job.employer?.name || '—'}`}
+                          submitterInfo={
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800 font-bold text-xs">
+                                {job.employer?.name ? job.employer.name.charAt(0).toUpperCase() : 'E'}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900 text-xs flex items-center gap-1.5">
+                                  <span>{job.employer?.name || 'Employer'}</span>
+                                  <span className="rounded bg-blue-50 px-1 py-0.2 text-[10px] font-bold text-blue-800">EMPLOYER</span>
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-mono-data">
+                                  {job.employer?.phone || job.employer?.email || '—'}
+                                </div>
+                              </div>
+                            </div>
+                          }
+                          onInspect={() => openJobDetail(job)}
                           onApprove={() => handleApproveJob(job.id)}
                           onReject={() => openRejectDialog('jobs', job.id, job.title)}
                           actionLoading={actionLoading}
                         />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              {/* TAB 6: APPROVAL COMMENTS */}
+              {activeTab === 'comments' && (
+                <>
+                  {approvalComments.length === 0 ? (
+                    <EmptyState message="No approval comments recorded yet. Comments appear here after you approve or reject submissions with feedback." />
+                  ) : (
+                    <div className="space-y-3">
+                      {approvalComments.map((c) => (
+                        <Card key={c.id} statusRail={c.status === 'PUBLISHED' ? 'published' : 'rejected'} className="p-4 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              {c.status === 'PUBLISHED' ? (
+                                <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                              )}
+                              <span className="text-xs font-bold text-gray-900 truncate">{c.title}</span>
+                            </div>
+                            <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-gray-100 text-gray-600 shrink-0">{c.type}</span>
+                          </div>
+                          <div className="flex items-start gap-2 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+                            <MessageSquare className="h-3.5 w-3.5 text-rose-400 mt-0.5 shrink-0" />
+                            <p className="text-xs text-gray-700 leading-relaxed italic">&ldquo;{c.comment}&rdquo;</p>
+                          </div>
+                        </Card>
                       ))}
                     </div>
                   )}
@@ -845,6 +1149,16 @@ export function ManagerDashboard() {
                 </span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
+              <button
+                type="button"
+                onClick={() => setActiveTab('comments')}
+                className="w-full flex items-center justify-between rounded-lg p-2 text-xs font-semibold text-gray-700 hover:bg-rose-50 hover:text-rose-700 transition"
+              >
+                <span className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-rose-500" /> Comment Management
+                </span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
             </div>
           </Card>
         </div>
@@ -865,6 +1179,16 @@ export function ManagerDashboard() {
         isLoading={actionLoading}
         onConfirm={handleConfirmReject}
         onCancel={() => setRejectDialog({ open: false, type: 'listings', id: '', title: '' })}
+      />
+
+      {/* Full Detail Moderation Inspection Modal */}
+      <ManagerItemDetailModal
+        isOpen={Boolean(detailModalItem)}
+        item={detailModalItem}
+        onClose={() => setDetailModalItem(null)}
+        onApprove={handleDetailApprove}
+        onReject={handleDetailReject}
+        actionLoading={actionLoading}
       />
     </DashboardLayout>
   );

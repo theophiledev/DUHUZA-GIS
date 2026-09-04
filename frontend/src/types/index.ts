@@ -13,6 +13,16 @@ export interface User {
   updatedAt: string;
 }
 
+export interface SubmitterProfile {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  role?: Role | string;
+  createdAt?: string;
+  preferredLanguage?: LanguageCode;
+}
+
 export interface AuthResponse {
   token: string;
   user: User;
@@ -38,6 +48,7 @@ export interface PublicListing {
   media: { url: string; type: string }[];
   attributes: Record<string, string>;
   whatsappLinkAvailable?: boolean;
+  approvalComment?: string | null;
 }
 
 export interface InternalListing {
@@ -55,6 +66,7 @@ export interface InternalListing {
   createdAt: string;
   status: string;
   agentId: string;
+  agent?: SubmitterProfile;
   privateLat?: number;
   privateLng?: number;
   ownerName?: string;
@@ -64,6 +76,7 @@ export interface InternalListing {
   attributes?: { key: string; value: string }[] | Record<string, string>;
   media?: { url: string; type?: string; sortOrder?: number }[];
   statusHistory?: StatusHistoryItem[];
+  approvalComment?: string | null;
 }
 
 export interface MarketItem {
@@ -78,8 +91,9 @@ export interface MarketItem {
   status: string;
   isPromoted?: boolean;
   media?: { url: string; sortOrder: number }[];
-  seller?: { id: string; name: string; phone?: string };
+  seller?: SubmitterProfile;
   createdAt: string;
+  approvalComment?: string | null;
 }
 
 export interface ServiceProvider {
@@ -91,7 +105,9 @@ export interface ServiceProvider {
   coverageSector?: string | null;
   status: string;
   isPromoted?: boolean;
-  user?: { id: string; name: string };
+  user?: SubmitterProfile;
+  createdAt?: string;
+  approvalComment?: string | null;
 }
 
 export interface Job {
@@ -103,8 +119,9 @@ export interface Job {
   deadline?: string | null;
   status: string;
   createdAt: string;
-  employer?: { id: string; name: string };
+  employer?: SubmitterProfile;
   _count?: { applications: number };
+  approvalComment?: string | null;
 }
 
 export interface GisRequest {
@@ -116,8 +133,8 @@ export interface GisRequest {
   assignedAgentId?: string | null;
   reportUrl?: string | null;
   createdAt: string;
-  client?: { id: string; name: string; phone?: string };
-  assignedAgent?: { id: string; name: string; phone?: string };
+  client?: SubmitterProfile;
+  assignedAgent?: SubmitterProfile;
 }
 
 export interface StatusHistoryItem {
@@ -126,6 +143,7 @@ export interface StatusHistoryItem {
   newStatus: string;
   comment?: string | null;
   changedAt: string;
+  changedBy?: { id: string; name: string; role?: string };
 }
 
 export interface UserPermissionItem {
@@ -145,4 +163,3 @@ export interface AdminUser {
   createdAt: string;
   permissions?: UserPermissionItem[];
 }
-

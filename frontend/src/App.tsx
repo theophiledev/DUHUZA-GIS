@@ -14,6 +14,8 @@ import { JobsPage } from './pages/JobsPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { AgentDashboard } from './pages/agent/AgentDashboard';
 import { AgentListingsPage } from './pages/agent/AgentListingsPage';
 import { AgentListingFormPage } from './pages/agent/AgentListingFormPage';
@@ -56,10 +58,13 @@ export default function App() {
               <Route element={<GuestRoute />}>
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<RegisterPage />} />
+                <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="reset-password" element={<ForgotPasswordPage />} />
               </Route>
 
               <Route path="dashboard" element={<ProtectedRoute />}>
                 <Route index element={<DashboardRedirect />} />
+                <Route path="profile" element={<ProfilePage />} />
 
                 <Route path="agent" element={<ProtectedRoute roles={['AGENT']} />}>
                   <Route index element={<AgentDashboard />} />
@@ -96,6 +101,7 @@ export default function App() {
                 </Route>
               </Route>
 
+              <Route path="profile" element={<Navigate to="/dashboard/profile" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

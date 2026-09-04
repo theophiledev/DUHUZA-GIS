@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../config/db');
+const { sendSubmissionReceivedEmail } = require('../utils/emailService');
 
 // Market items are self-serve for ANY authenticated client (FR34) —
 // unlike property, no Admin-created Agent account is required.
@@ -36,6 +37,17 @@ async function createMarketItem(req, res) {
     },
     include: { media: true },
   });
+
+  // Dispatch submission receipt email
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (user && user.email) {
+    sendSubmissionReceivedEmail({
+      to: user.email,
+      name: user.name,
+      itemType: 'Marketplace Item',
+      itemTitle: item.title,
+    }).catch((err) => console.error('[MarketController] Failed to send receipt email:', err.message));
+  }
 
   return res.status(201).json(item);
 }

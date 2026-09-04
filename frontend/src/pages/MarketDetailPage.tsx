@@ -10,6 +10,7 @@ import { showToast } from '../components/Toast';
 import { useLanguage } from '../context/LanguageContext';
 import { Share2 } from 'lucide-react';
 import { PinIcon } from '../components/FilterBar';
+import { ReviewsAndComments } from '../components/ReviewsAndComments';
 import type { MarketItem } from '../types';
 
 export function MarketDetailPage() {
@@ -156,6 +157,14 @@ export function MarketDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Ratings, Comments & Verified Reviews Section */}
+      <ReviewsAndComments
+        itemId={item.id}
+        itemType="market"
+        itemTitle={item.title}
+        approvalComment={item.approvalComment || undefined}
+      />
 
       <ImageLightbox
         images={mediaList}
